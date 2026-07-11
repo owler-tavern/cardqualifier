@@ -103,7 +103,7 @@ export function buildAiReviewRequest(cardText, options = {}) {
         schema: AI_REVIEW_SCHEMA,
       },
     },
-    max_output_tokens: 2500,
+    max_output_tokens: 4096,
     store: false,
   };
 }
@@ -151,7 +151,7 @@ export function buildChatCompletionReviewRequest(cardText, options = {}) {
         schema: AI_REVIEW_SCHEMA,
       },
     },
-    max_tokens: 2500,
+    max_tokens: 4096,
     temperature: 0.4,
   };
 }
@@ -169,7 +169,19 @@ export function extractResponseText(responseJson) {
 }
 
 export function parseAiReviewResponse(responseJson) {
-  return normalizeAiReview(JSON.parse(normalizeJsonText(extractResponseText(responseJson))));
+  const raw = extractResponseText(responseJson);
+  const cleaned = normalizeJsonText(raw);
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (error) {
+    // Truncated output (model hit the token cap mid-draft) leaves the JSON
+    // unbalanced. Recover the complete suggestion objects that did arrive.
+    const salvaged = salvageSuggestions(cleaned) ?? salvageSuggestions(raw);
+    if (!salvaged) throw error;
+    parsed = salvaged;
+  }
+  return normalizeAiReview(parsed);
 }
 
 export function normalizeJsonText(text) {
@@ -180,7 +192,38 @@ export function normalizeJsonText(text) {
   const embeddedFence = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   if (embeddedFence) return embeddedFence[1].trim();
 
-  return extractJsonObjectText(trimmed) ?? trimmed;
+  // Strip a leading fence that was never closed (truncated output).
+  const openFence = trimmed.match(/^```(?:json)?[ \t]*\r?\n?/i);
+  const body = openFence ? trimmed.slice(openFence[0].length) : trimmed;
+
+  return extractJsonObjectText(body) ?? body;
+}
+
+function salvageSuggestions(text) {
+  if (typeof text !== "string") return null;
+  const key = text.indexOf("\"suggestions\"");
+  if (key === -1) return null;
+  const arrayStart = text.indexOf("[", key);
+  if (arrayStart === -1) return null;
+
+  const objects = [];
+  let index = arrayStart + 1;
+  while (index < text.length) {
+    while (index < text.length && /[\s,]/.test(text[index])) index += 1;
+    if (index >= text.length || text[index] !== "{") break;
+    const objectText = extractJsonObjectText(text.slice(index));
+    if (!objectText) break; // reached the truncated object
+    let parsedObject;
+    try {
+      parsedObject = JSON.parse(objectText);
+    } catch {
+      break;
+    }
+    objects.push(parsedObject);
+    index += objectText.length;
+  }
+
+  return objects.length ? { summary: "", suggestions: objects } : null;
 }
 
 function extractJsonObjectText(text) {
@@ -231,20 +274,42 @@ function normalizeAiReview(review) {
 
 function normalizeSuggestion(item) {
   if (!item || typeof item !== "object") return null;
-  const field = allowedField(item.field);
-  const draft = stringValue(item.draft);
+  // Local models routinely ignore the JSON schema and emit good content under
+  // alternate key names (targetField/explanation/pasteReadyDraft/findingId).
+  // Accept those aliases so their work is not silently discarded.
+  const field = allowedField(firstString(item, ["field", "targetField"]));
+  const draft = firstString(item, ["draft", "pasteReadyDraft", "text", "content"]);
   if (!field || !draft) return null;
 
   return {
     field,
-    title: stringValue(item.title) || "Improve this field",
-    why: stringValue(item.why) || "The model suggested this as a useful improvement.",
+    title: firstString(item, ["title"]) || "Improve this field",
+    why: firstString(item, ["why", "explanation", "issue", "reason"]) || "The model suggested this as a useful improvement.",
     draft,
     evidence: Array.isArray(item.evidence) ? item.evidence.map(stringValue).filter(Boolean).slice(0, 4) : [],
     confidence: allowedConfidence(item.confidence),
-    resolvesFindingIds: Array.isArray(item.resolvesFindingIds) ? item.resolvesFindingIds.map(stringValue).filter(Boolean) : [],
+    resolvesFindingIds: normalizeFindingIds(item),
     directionUsed: Boolean(item.directionUsed),
   };
+}
+
+function firstString(item, keys) {
+  for (const key of keys) {
+    const value = stringValue(item[key]);
+    if (value) return value;
+  }
+  return "";
+}
+
+function normalizeFindingIds(item) {
+  const source = item.resolvesFindingIds ?? item.findingIds ?? (item.findingId != null ? [item.findingId] : []);
+  return Array.isArray(source) ? source.map(stringValue).filter(Boolean) : [];
+}
+
+const DRAFTABLE_FIELDS = AI_REVIEW_SCHEMA.properties.suggestions.items.properties.field.enum;
+
+export function isDraftableField(field) {
+  return typeof field === "string" && DRAFTABLE_FIELDS.includes(field.trim().toLowerCase());
 }
 
 export function filterAiSuggestions(suggestions, knownIds, knownFields = new Set()) {
@@ -258,7 +323,7 @@ export function filterAiSuggestions(suggestions, knownIds, knownFields = new Set
 function allowedField(value) {
   if (typeof value !== "string") return null;
   const normalized = value.trim().toLowerCase();
-  return AI_REVIEW_SCHEMA.properties.suggestions.items.properties.field.enum.find((field) => field === normalized) ?? null;
+  return DRAFTABLE_FIELDS.includes(normalized) ? normalized : null;
 }
 
 export function describeReviewerMiss(suggestions, field) {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { AI_REVIEW_SCHEMA, buildAiReviewPayload, buildAiReviewRequest, buildChatCompletionReviewRequest, describeReviewerMiss, filterAiSuggestions, parseAiReviewResponse } from "../src/ai-review.mjs";
+import { AI_REVIEW_SCHEMA, buildAiReviewPayload, buildAiReviewRequest, buildChatCompletionReviewRequest, describeReviewerMiss, filterAiSuggestions, isDraftableField, normalizeJsonText, parseAiReviewResponse } from "../src/ai-review.mjs";
 
 test("drops AI drafts that reference unknown deterministic findings", () => {
   const kept = filterAiSuggestions([{ field: "scenario", draft: "A scene", resolvesFindingIds: ["known"], directionUsed: true }, { field: "scenario", draft: "Invented", resolvesFindingIds: ["unknown"], directionUsed: false }], new Set(["known"]));
@@ -230,6 +230,63 @@ test("describeReviewerMiss reports an empty reviewer response", () => {
 test("describeReviewerMiss reports same-field drafts that were still filtered out", () => {
   const message = describeReviewerMiss([{ field: "personality" }], "personality");
   assert.match(message, /replied but sent no usable draft for personality/);
+});
+
+test("normalizer accepts the alternate key names local models emit", () => {
+  const parsed = parseAiReviewResponse({
+    choices: [{
+      message: {
+        content: JSON.stringify({
+          suggestions: [{
+            targetField: "description",
+            findingId: "rubric.description.make.the.character.definition.more.specific",
+            title: "Expand description",
+            explanation: "The definition is too thin.",
+            pasteReadyDraft: "A richer, concrete description of the character.",
+          }],
+        }),
+      },
+    }],
+  });
+
+  assert.equal(parsed.suggestions.length, 1);
+  const suggestion = parsed.suggestions[0];
+  assert.equal(suggestion.field, "description");
+  assert.equal(suggestion.draft, "A richer, concrete description of the character.");
+  assert.equal(suggestion.why, "The definition is too thin.");
+  assert.deepEqual(suggestion.resolvesFindingIds, ["rubric.description.make.the.character.definition.more.specific"]);
+});
+
+test("parser salvages complete suggestions from truncated fenced output", () => {
+  const truncated =
+    "```json\n{\n  \"suggestions\": [\n" +
+    "    {\"field\":\"description\",\"draft\":\"First complete draft.\",\"resolvesFindingIds\":[\"a\"]},\n" +
+    "    {\"field\":\"personality\",\"draft\":\"Second complete draft.\",\"resolvesFindingIds\":[\"b\"]},\n" +
+    "    {\"field\":\"scenario\",\"draft\":\"Third draft that gets cut off mid-str";
+
+  const parsed = parseAiReviewResponse({ choices: [{ message: { content: truncated } }] });
+
+  assert.deepEqual(parsed.suggestions.map((s) => s.field), ["description", "personality"]);
+  assert.deepEqual(parsed.suggestions.map((s) => s.draft), ["First complete draft.", "Second complete draft."]);
+});
+
+test("normalizeJsonText strips an unclosed json code fence", () => {
+  assert.equal(
+    normalizeJsonText('```json\n{"summary":"x","suggestions":[]}'),
+    '{"summary":"x","suggestions":[]}',
+  );
+});
+
+test("requests raise the output token cap for long drafts", () => {
+  assert.equal(buildAiReviewRequest(weakCard).max_output_tokens, 4096);
+  assert.equal(buildChatCompletionReviewRequest(weakCard).max_tokens, 4096);
+});
+
+test("isDraftableField separates card fields from finding categories", () => {
+  assert.equal(isDraftableField("description"), true);
+  assert.equal(isDraftableField("personality"), true);
+  assert.equal(isDraftableField("token_efficiency"), false);
+  assert.equal(isDraftableField("metadata"), false);
 });
 
 test("chat completion review request uses json schema response format", () => {
