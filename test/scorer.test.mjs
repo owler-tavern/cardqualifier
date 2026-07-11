@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applySuggestionToCard, embedCardJsonInPng, extractCardJsonFromPng, findRecommendedSuggestion, parseCard, scoreCard } from "../src/scorer.mjs";
+import { applySuggestionToCard, embedCardJsonInPng, extractCardJsonFromPng, extractPngTextChunks, findRecommendedSuggestion, parseCard, scoreCard } from "../src/scorer.mjs";
 
 test("emits auditable rubric findings in the shared Finding shape", () => {
   const result = scoreCard({ name: "Thin", description: "", personality: "", scenario: "Placeholder", first_mes: "Hi", mes_example: "" });
@@ -255,6 +255,51 @@ test("adds character JSON to a PNG without existing card metadata", () => {
 
   assert.equal(extracted.name, "New Bot");
 });
+
+test("prefers the canonical ccv3 chunk over a legacy chara chunk", () => {
+  const v2 = JSON.stringify({ spec: "chara_card_v2", spec_version: "2.0", data: { name: "V2 view" } });
+  const v3 = JSON.stringify({ spec: "chara_card_v3", spec_version: "3.0", data: { name: "V3 view" } });
+  const png = makePngWithChunks([["chara", v2], ["ccv3", v3]]);
+
+  assert.equal(JSON.parse(extractCardJsonFromPng(png)).data.name, "V3 view");
+});
+
+test("embedding writes both chara and ccv3 chunks", () => {
+  const png = makePngWithText("Comment", "plain image note");
+  const out = embedCardJsonInPng(png, { spec: "chara_card_v3", spec_version: "3.0", data: { name: "Dual" } });
+  const chunks = extractPngTextChunks(out);
+
+  assert.ok("chara" in chunks, "chara chunk present");
+  assert.ok("ccv3" in chunks, "ccv3 chunk present");
+  assert.equal(JSON.parse(extractCardJsonFromPng(out)).data.name, "Dual");
+});
+
+test("re-embedding a v3 card does not duplicate or drop the ccv3 chunk", () => {
+  const png = makePngWithChunks([["chara", "old"], ["ccv3", "old"]]);
+  const out = embedCardJsonInPng(png, { spec: "chara_card_v3", spec_version: "3.0", data: { name: "Once" } });
+  const chunks = extractPngTextChunks(out);
+
+  assert.ok("ccv3" in chunks);
+  // A second embed must not stack extra card chunks.
+  const out2 = embedCardJsonInPng(out, { spec: "chara_card_v3", spec_version: "3.0", data: { name: "Twice" } });
+  assert.equal(JSON.parse(extractCardJsonFromPng(out2)).data.name, "Twice");
+});
+
+function makePngWithChunks(pairs) {
+  const signature = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const chunks = pairs.map(([keyword, value]) => {
+    const data = new TextEncoder().encode(`${keyword}\0${value}`);
+    const chunk = new Uint8Array(12 + data.length);
+    const view = new DataView(chunk.buffer);
+    view.setUint32(0, data.length);
+    chunk.set(new TextEncoder().encode("tEXt"), 4);
+    chunk.set(data, 8);
+    view.setUint32(8 + data.length, 0);
+    return chunk;
+  });
+  const end = Uint8Array.from([0, 0, 0, 0, 73, 69, 78, 68, 0, 0, 0, 0]);
+  return concat(signature, ...chunks, end);
+}
 
 function makePngWithText(keyword, value) {
   const signature = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);

@@ -2,6 +2,9 @@ import { firstPresent, hasText, REQUIRED_V1_FIELDS } from "./card-common.mjs";
 
 const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 const CARD_TEXT_CHUNK_KEYS = new Set(["chara", "Chara", "character", "Character", "ccv3", "ccv2", "card"]);
+// SillyTavern writes both a legacy `chara` (V2) chunk and a canonical `ccv3`
+// (V3 superset) chunk. Prefer ccv3 when present so we review the richer card.
+const CARD_READ_PRIORITY = ["ccv3", "chara", "Chara", "character", "Character", "ccv2", "card"];
 const FIELD_ALIASES = {
   name: ["name", "char_name", "character_name", "title"],
   description: ["description", "char_description", "char_desc", "description_text"],
@@ -81,7 +84,7 @@ export function extractPngTextChunks(buffer) {
 
 export function extractCardJsonFromPng(buffer) {
   const chunks = extractPngTextChunks(buffer);
-  const value = firstPresent(chunks, [...CARD_TEXT_CHUNK_KEYS]);
+  const value = firstPresent(chunks, CARD_READ_PRIORITY);
   if (!value) {
     throw new Error("No embedded character data was found in this PNG.");
   }
@@ -100,7 +103,11 @@ export function embedCardJsonInPng(buffer, cardInput) {
   const cardJson = typeof cardInput === "string" ? JSON.stringify(JSON.parse(cardInput), null, 2) : JSON.stringify(cardInput, null, 2);
   const chunks = readPngChunks(bytes);
   const output = [Uint8Array.from(PNG_SIGNATURE)];
-  const cardChunk = makeTextChunk("chara", encodeBase64Text(cardJson));
+  // Write both the legacy V2 `chara` chunk (for older readers) and the
+  // canonical `ccv3` chunk, mirroring SillyTavern, so a V3 card survives the
+  // round-trip instead of being collapsed to a single legacy chunk.
+  const encoded = encodeBase64Text(cardJson);
+  const cardChunks = [makeTextChunk("chara", encoded), makeTextChunk("ccv3", encoded)];
   let inserted = false;
 
   for (const chunk of chunks) {
@@ -110,13 +117,13 @@ export function embedCardJsonInPng(buffer, cardInput) {
     }
 
     if (chunk.type === "IEND" && !inserted) {
-      output.push(cardChunk);
+      output.push(...cardChunks);
       inserted = true;
     }
     output.push(chunk.raw);
   }
 
-  if (!inserted) output.push(cardChunk);
+  if (!inserted) output.push(...cardChunks);
   return concatBytes(...output);
 }
 
