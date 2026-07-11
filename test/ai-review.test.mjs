@@ -232,6 +232,34 @@ test("describeReviewerMiss reports same-field drafts that were still filtered ou
   assert.match(message, /replied but sent no usable draft for personality/);
 });
 
+test("review instructions always ask for concise, non-padded drafts", () => {
+  assert.match(buildAiReviewRequest(weakCard).instructions, /concise/i);
+});
+
+test("a very large target field is told to trim to a core and offload to the lorebook", () => {
+  const bloated = JSON.stringify({
+    spec: "chara_card_v2",
+    data: {
+      name: "Lore Bomb",
+      description: "Setup. " + "This is permanent reference lore that belongs elsewhere. ".repeat(200),
+      personality: "Terse.",
+      scenario: "{{user}} arrives.",
+      first_mes: "Hi.",
+      mes_example: "",
+    },
+  });
+
+  const request = buildAiReviewRequest(bloated, { targetField: "description", validFindingIds: [] });
+  assert.match(request.instructions, /very large/i);
+  assert.match(request.instructions, /do not rewrite/i);
+  assert.match(request.instructions, /lorebook|character_book/i);
+});
+
+test("a normal-sized target field is not told to trim or offload", () => {
+  const request = buildAiReviewRequest(weakCard, { targetField: "personality", validFindingIds: [] });
+  assert.doesNotMatch(request.instructions, /do not rewrite/i);
+});
+
 test("normalizer accepts the alternate key names local models emit", () => {
   const parsed = parseAiReviewResponse({
     choices: [{

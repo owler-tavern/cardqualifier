@@ -1,5 +1,10 @@
 import { parseCard, scoreCard } from "./scorer.mjs";
 
+// Above this size a field is bloated enough that a full rewrite is the wrong
+// move — the reviewer should trim to a core and push reference material to the
+// lorebook instead. ~4000 chars ≈ ~1000 permanent-context tokens.
+const LARGE_FIELD_CHARS = 4000;
+
 export const AI_REVIEW_SCHEMA = {
   type: "object",
   properties: {
@@ -78,6 +83,7 @@ export function buildAiReviewRequest(cardText, options = {}) {
     "Prefer concrete playable additions: clearer scenario pressure, stronger first-message hook, voice examples, or lorebook entries.",
     "Avoid generic AI prose, purple language, overexplaining, and vague praise.",
     "For mes_example, use SillyTavern style with <START>, {{user}}:, and {{char}}:.",
+    "Keep every draft concise and paste-ready; tighten rather than pad, and never inflate a field just to fill space.",
   ];
 
   if (payload.targetField) {
@@ -88,6 +94,14 @@ export function buildAiReviewRequest(cardText, options = {}) {
         ? `resolvesFindingIds MUST be a subset of this list and nothing else: ${JSON.stringify(validIds)}.`
         : "Leave resolvesFindingIds empty; no deterministic finding ids were supplied for this field.",
     );
+
+    const fieldValue = payload.card?.fields?.[payload.targetField];
+    if (typeof fieldValue === "string" && fieldValue.length > LARGE_FIELD_CHARS) {
+      instructions.push(
+        `The "${payload.targetField}" field is very large (${fieldValue.length} characters) and already carries permanent prompt weight on every message.`,
+        `Do not rewrite it wholesale. Return a tightened core that keeps only essential, always-relevant character definition, and explicitly note in your explanation which blocks belong in the lorebook (character_book) instead of the permanent "${payload.targetField}" field.`,
+      );
+    }
   }
 
   const instructionText = instructions.join(" ");
