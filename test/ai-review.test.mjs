@@ -1,0 +1,241 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { AI_REVIEW_SCHEMA, buildAiReviewPayload, buildAiReviewRequest, buildChatCompletionReviewRequest, describeReviewerMiss, filterAiSuggestions, parseAiReviewResponse } from "../src/ai-review.mjs";
+
+test("drops AI drafts that reference unknown deterministic findings", () => {
+  const kept = filterAiSuggestions([{ field: "scenario", draft: "A scene", resolvesFindingIds: ["known"], directionUsed: true }, { field: "scenario", draft: "Invented", resolvesFindingIds: ["unknown"], directionUsed: false }], new Set(["known"]));
+  assert.deepEqual(kept.map((item) => item.draft), ["A scene"]);
+});
+
+test("keeps single-field reviewer drafts when the model omits finding ids", () => {
+  const kept = filterAiSuggestions([
+    { field: "personality", draft: "Quietly wary, gentle under pressure.", resolvesFindingIds: [], directionUsed: true },
+    { field: "scenario", draft: "A different scene.", resolvesFindingIds: [], directionUsed: false },
+  ], new Set(["rubric.personality.draft.missing.personality"]), new Set(["personality"]));
+
+  assert.deepEqual(kept.map((item) => item.draft), ["Quietly wary, gentle under pressure."]);
+});
+
+const weakCard = JSON.stringify({
+  name: "Mara Venn",
+  description: "Mara Venn is a retired courier from Leth.",
+  personality: "Guarded but generous.",
+  scenario: "{{user}} meets Mara Venn at a station.",
+  first_mes: "Hi.",
+  mes_example: "",
+});
+
+test("AI review request includes strict schema and anti-invention instructions", () => {
+  const request = buildAiReviewRequest(weakCard);
+
+  assert.equal(request.text.format.type, "json_schema");
+  assert.equal(request.text.format.strict, true);
+  assert.match(request.instructions, /SillyTavern\/JanitorAI-style character card quality reviewer/);
+  assert.match(request.instructions, /stripped card fields/);
+  assert.match(request.instructions, /Do not invent canon facts/);
+  assert.match(request.instructions, /metadata as dialogue/);
+  assert.match(request.instructions, /When Playability evidence identifies a gap, improve one named link only\. Preserve all named facts and unresolved states\. Do not invent canon; mark any necessary new decision as an editable candidate\./);
+});
+
+test("AI review payload includes deterministic score context", () => {
+  const payload = buildAiReviewPayload(weakCard);
+
+  assert.equal(payload.score.band, "Weak");
+  assert.ok(payload.score.findings.length > 0);
+  assert.equal(payload.card.fields.name, "Mara Venn");
+  assert.equal(payload.card.rawJsonIncluded, false);
+});
+
+test("AI review payload includes merged findings and steering", () => {
+  const payload = buildAiReviewPayload(weakCard);
+
+  assert.ok(payload.score.findings.every((card) => Array.isArray(card.findings)));
+  assert.equal(payload.creatorDirection, "true");
+  assert.equal(payload.targetModel, "any");
+});
+
+test("AI review payload sends only review-relevant card fields", () => {
+  const payload = buildAiReviewPayload(JSON.stringify({
+    spec: "chara_card_v2",
+    data: {
+      name: "Scoped Bot",
+      description: "A bot with a narrow payload.",
+      personality: "Careful.",
+      scenario: "{{user}} tests payload scope.",
+      first_mes: "Hello?",
+      mes_example: "",
+      extensions: { private_blob: "do not send this" },
+      irrelevant_dump: "do not send this either",
+    },
+  }));
+
+  assert.equal(payload.card.fields.name, "Scoped Bot");
+  assert.equal(payload.card.fields.extensions, undefined);
+  assert.equal(payload.card.fields.irrelevant_dump, undefined);
+});
+
+test("AI response parser extracts output_text content", () => {
+  const parsed = parseAiReviewResponse({
+    output: [{
+      content: [{
+        type: "output_text",
+        text: JSON.stringify({ summary: "ok", warranted: true, suggestions: [] }),
+      }],
+    }],
+  });
+
+  assert.equal(parsed.summary, "ok");
+});
+
+test("AI response parser supports OpenAI-compatible chat completion output", () => {
+  const parsed = parseAiReviewResponse({
+    choices: [{
+      message: {
+        content: JSON.stringify({ summary: "compatible", warranted: true, suggestions: [] }),
+      },
+    }],
+  });
+
+  assert.equal(parsed.summary, "compatible");
+});
+
+test("AI response parser accepts JSON wrapped in a markdown code fence", () => {
+  const parsed = parseAiReviewResponse({
+    choices: [{
+      message: {
+        content: "```json\n{\"summary\":\"fenced\",\"warranted\":true,\"suggestions\":[]}\n```",
+      },
+    }],
+  });
+
+  assert.equal(parsed.summary, "fenced");
+});
+
+test("AI response parser accepts fenced JSON with text around it", () => {
+  const parsed = parseAiReviewResponse({
+    choices: [{
+      message: {
+        content: "Here is the review:\n```json {\"summary\":\"inline fence\",\"warranted\":true,\"suggestions\":[]} ```\nDone.",
+      },
+    }],
+  });
+
+  assert.equal(parsed.summary, "inline fence");
+});
+
+test("AI response parser extracts the first JSON object from prose", () => {
+  const parsed = parseAiReviewResponse({
+    choices: [{
+      message: {
+        content: "The structured result is {\"summary\":\"object only\",\"warranted\":true,\"suggestions\":[]} Thanks.",
+      },
+    }],
+  });
+
+  assert.equal(parsed.summary, "object only");
+});
+
+test("AI response parser normalizes partial provider suggestions", () => {
+  const parsed = parseAiReviewResponse({
+    choices: [{
+      message: {
+        content: JSON.stringify({
+          summary: "partial",
+          warranted: true,
+          suggestions: [{
+            field: "description",
+            title: "Add motive",
+            why: "The motive is thin.",
+            draft: "Alex wants a clearer goal.",
+          }],
+        }),
+      },
+    }],
+  });
+
+  assert.deepEqual(parsed.suggestions[0].evidence, []);
+  assert.equal(parsed.suggestions[0].confidence, "medium");
+});
+
+test("strict schema drops minItems/maxItems for provider compatibility", () => {
+  const raw = JSON.stringify(AI_REVIEW_SCHEMA);
+  assert.doesNotMatch(raw, /minItems/);
+  assert.doesNotMatch(raw, /maxItems/);
+});
+
+test("single-field request names the field and pins the valid finding ids", () => {
+  const request = buildAiReviewRequest(weakCard, {
+    targetField: "personality",
+    validFindingIds: ["rubric.personality.thin", "rubric.personality.unanchored"],
+  });
+
+  assert.match(request.instructions, /Return exactly one suggestion\. Its field MUST be "personality"\./);
+  assert.match(request.instructions, /resolvesFindingIds MUST be a subset/);
+  assert.match(request.instructions, /rubric\.personality\.thin/);
+  assert.match(request.instructions, /rubric\.personality\.unanchored/);
+});
+
+test("single-field request instructs empty ids when none are supplied", () => {
+  const request = buildAiReviewRequest(weakCard, { targetField: "scenario", validFindingIds: [] });
+
+  assert.match(request.instructions, /Its field MUST be "scenario"/);
+  assert.match(request.instructions, /Leave resolvesFindingIds empty/);
+});
+
+test("generic review request omits the single-field instruction", () => {
+  const request = buildAiReviewRequest(weakCard);
+  assert.doesNotMatch(request.instructions, /Return exactly one suggestion/);
+});
+
+test("payload carries the normalized target field and valid finding ids", () => {
+  const payload = buildAiReviewPayload(weakCard, {
+    targetField: "Personality",
+    validFindingIds: ["a", " ", "b"],
+  });
+
+  assert.equal(payload.targetField, "personality");
+  assert.deepEqual(payload.validFindingIds, ["a", "b"]);
+});
+
+test("payload rejects an unknown target field", () => {
+  const payload = buildAiReviewPayload(weakCard, { targetField: "not_a_field" });
+  assert.equal(payload.targetField, null);
+});
+
+test("suggestion normalizer matches the field enum case-insensitively", () => {
+  const parsed = parseAiReviewResponse({
+    choices: [{
+      message: {
+        content: JSON.stringify({
+          summary: "cased",
+          suggestions: [{ field: "Personality", title: "t", why: "w", draft: "Warmer voice." }],
+        }),
+      },
+    }],
+  });
+
+  assert.equal(parsed.suggestions.length, 1);
+  assert.equal(parsed.suggestions[0].field, "personality");
+});
+
+test("describeReviewerMiss reports drafts aimed at other fields", () => {
+  const message = describeReviewerMiss([{ field: "description" }, { field: "scenario" }], "personality");
+  assert.match(message, /returned 2 drafts, but for description, scenario — not personality/);
+});
+
+test("describeReviewerMiss reports an empty reviewer response", () => {
+  assert.match(describeReviewerMiss([], "personality"), /did not send a usable draft for personality/);
+});
+
+test("describeReviewerMiss reports same-field drafts that were still filtered out", () => {
+  const message = describeReviewerMiss([{ field: "personality" }], "personality");
+  assert.match(message, /replied but sent no usable draft for personality/);
+});
+
+test("chat completion review request uses json schema response format", () => {
+  const request = buildChatCompletionReviewRequest(weakCard);
+
+  assert.equal(request.response_format.type, "json_schema");
+  assert.equal(request.response_format.json_schema.strict, true);
+  assert.equal(request.messages[0].role, "system");
+});

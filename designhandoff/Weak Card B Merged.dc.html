@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="./image-slot.js"></script>
+  <style>
+    body { margin: 0; background: #1a1511; }
+    a { color: #dfa04f; } a:hover { color: #f0bd77; }
+  </style>
+</helmet>
+<div style="min-height: 100vh; background: radial-gradient(1200px 500px at 50% -10%, #241d15, #1a1511 70%) #1a1511; color: #ede3d3; font-family: 'Instrument Sans', system-ui, sans-serif; line-height: 1.5" data-screen-label="Weak card — merged by field">
+
+  <header style="display: flex; align-items: center; gap: 28px; max-width: 1080px; margin: 0 auto; padding: 22px 32px 0">
+    <span style="font-family: Spectral, serif; font-size: 19px; font-weight: 600">CardQualifier</span>
+    <span style="margin-left: auto; font-size: 12.5px; color: #7d6f5b">14 findings from 4 engines · merged into 5 field cards</span>
+  </header>
+
+  <main style="max-width: 1080px; margin: 0 auto; padding: 40px 32px 64px; display: grid; gap: 40px">
+
+    <!-- Verdict -->
+    <section style="display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start">
+      <div style="position: relative">
+        <div style="width: 220px; height: 294px; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.45); border: 1px solid #3d3427; transform: rotate(-1.2deg)">
+          <image-slot id="wk-b-portrait" shape="rounded" radius="14" placeholder="Kai.png" style="width: 220px; height: 294px"></image-slot>
+        </div>
+        <div style="position: absolute; right: -18px; bottom: -14px; width: 92px; height: 92px; border-radius: 999px; border: 2px solid #e2897d; color: #e2897d; display: grid; place-items: center; text-align: center; transform: rotate(6deg); background: rgba(26,21,17,0.92); box-shadow: 0 12px 28px rgba(0,0,0,0.4)">
+          <div>
+            <div style="font-family: Spectral, serif; font-size: 30px; font-weight: 600; line-height: 1">34</div>
+            <div style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; margin-top: 2px">Not ready</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding-top: 4px">
+        <p style="margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #a5947a">The studio's verdict</p>
+        <h1 style="margin: 0 0 12px; font-family: Spectral, serif; font-weight: 400; font-size: 38px; line-height: 1.15; text-wrap: pretty">Kai isn't ready yet. Three fields carry all fourteen problems.</h1>
+        <p style="margin: 0 0 14px; font-size: 15.5px; color: #bfae95; max-width: 58ch; text-wrap: pretty">Rather than fourteen separate complaints, here's where they live: his voice (missing examples), his weight (an 812-word description), and his opening (a scenario that says "TBD"). Fix a field once and every finding inside it clears together.</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <sc-for list="{{ fieldChips }}" as="chip" hint-placeholder-count="5">
+            <span style="display: inline-flex; align-items: center; gap: 7px; border: 1px solid {{ chip.border }}; border-radius: 999px; background: {{ chip.bg }}; padding: 3px 12px; font-size: 12.5px; font-weight: 600; color: {{ chip.color }}">{{ chip.label }} <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7d6f5b">{{ chip.count }}</span></span>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <!-- Field cards -->
+    <section>
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px">
+        <h2 style="margin: 0; font-family: Spectral, serif; font-weight: 500; font-size: 23px">Three fields, in order of leverage</h2>
+        <span style="font-size: 13px; color: #a5947a">every engine's findings, one card per field</span>
+      </div>
+      <div style="display: grid; gap: 12px">
+        <sc-for list="{{ fields }}" as="f" hint-placeholder-count="3">
+          <article style="border: 1px solid #332b20; border-radius: 14px; background: #211b14; padding: 18px 22px">
+            <div style="display: flex; gap: 13px; align-items: baseline; flex-wrap: wrap">
+              <span style="flex: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #dfa04f; background: rgba(223,160,79,0.1); border-radius: 6px; padding: 3px 9px">{{ f.field }}</span>
+              <h3 style="margin: 0; font-size: 15.5px; font-weight: 600">{{ f.title }}</h3>
+              <span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #e2897d">{{ f.leverage }}</span>
+            </div>
+            <div style="display: grid; gap: 5px; margin: 12px 0 0">
+              <sc-for list="{{ f.findings }}" as="fd" hint-placeholder-count="3">
+                <div style="display: grid; grid-template-columns: 92px 1fr; gap: 10px; align-items: baseline; font-size: 13px">
+                  <span style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: {{ fd.color }}">{{ fd.engine }}</span>
+                  <span style="color: #bfae95; text-wrap: pretty">{{ fd.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <details style="margin-top: 12px; border: 1px solid #2c251b; border-radius: 10px; background: #17120d">
+              <summary style="cursor: pointer; padding: 10px 14px; font-size: 12.5px; font-weight: 600; color: #dfa04f; list-style-position: inside">One combined fix for all {{ f.count }}</summary>
+              <pre style="margin: 0; padding: 4px 14px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #d8cdb9; white-space: pre-wrap">{{ f.fix }}</pre>
+            </details>
+            <div style="display: flex; align-items: center; gap: 14px; margin-top: 12px">
+              <button onClick="{{ f.onApply }}" style="border: 1px solid #4a4030; border-radius: 9px; background: {{ f.applyBg }}; color: {{ f.applyColor }}; min-height: 36px; padding: 0 15px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer" style-hover="border-color: #dfa04f">{{ f.applyLabel }}</button>
+              <span style="margin-left: auto; font-size: 12.5px; color: #7d6f5b">clears {{ f.count }} findings at once</span>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+
+      <details style="margin-top: 12px; border: 1px solid #332b20; border-radius: 12px; background: #1e1812">
+        <summary style="cursor: pointer; padding: 12px 16px; font-size: 13.5px; font-weight: 600; color: #a5947a; list-style-position: inside">2 more fields with smaller gains — tags (~+2) and creator notes (~+1)</summary>
+        <div style="padding: 4px 16px 14px; font-size: 13px; color: #bfae95">23 tags should become ~6 honest ones; creator notes should say what kind of story he's for. Worth doing after the big three.</div>
+      </details>
+      <details style="margin-top: 8px; border: 1px solid #332b20; border-radius: 12px; background: #1e1812">
+        <summary style="cursor: pointer; padding: 12px 16px; font-size: 13.5px; font-weight: 600; color: #a5947a; list-style-position: inside">4 polish notes — style and playability advice, never counted against him</summary>
+        <div style="padding: 4px 16px 14px; display: grid; gap: 6px; font-size: 13px; color: #bfae95">
+          <div>Adjective-only personality · person-mixing in description · no unresolved tension · too heavy for small models.</div>
+        </div>
+      </details>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1180, &quot;height&quot;: 1720}}">
+class Component extends DCLogic {
+  state = { applied: {} };
+
+  renderVals() {
+    const { applied } = this.state;
+    const engines = { rubric: "#e0a463", playability: "#9db8a0", style: "#a5947a", ai: "#dfa04f" };
+    const fieldData = [
+      {
+        id: "examples", field: "mes_example", title: "He has no voice", leverage: "~+12 pts", count: 4,
+        findings: [
+          { engine: "rubric", text: "Example messages are empty — the strongest voice-teaching field is unused (0/15)." },
+          { engine: "playability", text: "None of his 3 stated traits has a dialogue anchor to imitate." },
+          { engine: "style", text: "Nothing demonstrates the lying-about-weather behavior the description promises." },
+          { engine: "ai", text: "AI drafting is gated: with no voice sample, drafts would be pure invention." },
+        ],
+        fix: "<START>\n{{user}}: Is the light supposed to flicker like that?\n{{char}}: *Kai doesn't look up from the logbook.* \"Clear skies tonight. Calm seas.\" *Outside, the storm takes the weathervane.*",
+      },
+      {
+        id: "description", field: "description", title: "He weighs 812 words", leverage: "~+9 pts", count: 5,
+        findings: [
+          { engine: "rubric", text: "Token efficiency 1/10 — permanent context crowds out chat history on every model." },
+          { engine: "rubric", text: "9 paragraphs of routine and furniture bury the three facts that matter." },
+          { engine: "style", text: "Slips between second and third person mid-paragraph." },
+          { engine: "playability", text: "The sister's loss — his best tension — is mentioned once, in passing, at word 640." },
+          { engine: "ai", text: "A compression draft is ready once you choose what to keep." },
+        ],
+        fix: "Keep: lighthouse keeper · lies about weather to keep ships away · sister lost to a rescue he called off.\nMove to scenario: the inspector arriving tonight.\nMove to lorebook: island history, the wreck of the Anselm.\nDelete: the rest.",
+      },
+      {
+        id: "scenario", field: "scenario", title: "His opening says \"TBD\"", leverage: "~+10 pts", count: 5,
+        findings: [
+          { engine: "rubric", text: "Scenario contains placeholder text (−6) and the greeting sets no scene (−4)." },
+          { engine: "playability", text: "\"Hi, I'm Kai.\" asks nothing — no live question for the user to answer." },
+          { engine: "playability", text: "No unresolved tension anywhere in the card." },
+          { engine: "style", text: "Greeting is 4 words; even one sensory detail would anchor the scene." },
+          { engine: "ai", text: "Draft ready: the inspector's boat is due at dusk, and the weather log is full of lies." },
+        ],
+        fix: "scenario: An inspector arrives tonight to audit the weather log — every entry for the last year is a lie.\n\nfirst_mes: *Kai watches the boat's lantern crawl closer through real rain his logbook calls \"clear.\"* \"You'll want dry boots for this conversation. Ask me why.\"",
+      },
+    ];
+    return {
+      fieldChips: [
+        { label: "mes_example", count: "4", color: "#e2897d", border: "rgba(226,137,125,0.4)", bg: "rgba(226,137,125,0.08)" },
+        { label: "description", count: "5", color: "#e2897d", border: "rgba(226,137,125,0.4)", bg: "rgba(226,137,125,0.08)" },
+        { label: "scenario + greeting", count: "5", color: "#e0a463", border: "rgba(224,164,99,0.4)", bg: "rgba(224,164,99,0.08)" },
+        { label: "tags", count: "2", color: "#a5947a", border: "#383024", bg: "transparent" },
+        { label: "creator_notes", count: "1", color: "#a5947a", border: "#383024", bg: "transparent" },
+      ],
+      fields: fieldData.map((f) => ({
+        ...f,
+        findings: f.findings.map((fd) => ({ ...fd, color: engines[fd.engine] })),
+        applyLabel: applied[f.id] ? "Applied ✓ (undo)" : "Apply combined fix",
+        applyBg: applied[f.id] ? "rgba(147,203,164,0.12)" : "transparent",
+        applyColor: applied[f.id] ? "#93cba4" : "#ede3d3",
+        onApply: () => this.setState((s) => ({ applied: { ...s.applied, [f.id]: !s.applied[f.id] } })),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

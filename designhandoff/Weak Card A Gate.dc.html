@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="./image-slot.js"></script>
+  <style>
+    body { margin: 0; background: #1a1511; }
+    a { color: #dfa04f; } a:hover { color: #f0bd77; }
+  </style>
+</helmet>
+<div style="min-height: 100vh; background: radial-gradient(1200px 500px at 50% -10%, #241d15, #1a1511 70%) #1a1511; color: #ede3d3; font-family: 'Instrument Sans', system-ui, sans-serif; line-height: 1.5" data-screen-label="Weak card — sequenced gate">
+
+  <header style="display: flex; align-items: center; gap: 28px; max-width: 1080px; margin: 0 auto; padding: 22px 32px 0">
+    <span style="font-family: Spectral, serif; font-size: 19px; font-weight: 600">CardQualifier</span>
+    <span style="margin-left: auto; font-size: 12.5px; color: #7d6f5b">steering appears once the card imports cleanly</span>
+  </header>
+
+  <main style="max-width: 1080px; margin: 0 auto; padding: 40px 32px 64px; display: grid; gap: 40px">
+
+    <!-- Verdict -->
+    <section style="display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start">
+      <div style="position: relative">
+        <div style="width: 220px; height: 294px; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.45); border: 1px solid #3d3427; transform: rotate(-1.2deg)">
+          <image-slot id="wk-a-portrait" shape="rounded" radius="14" placeholder="Kai.png" style="width: 220px; height: 294px"></image-slot>
+        </div>
+        <div style="position: absolute; right: -18px; bottom: -14px; width: 92px; height: 92px; border-radius: 999px; border: 2px solid #e2897d; color: #e2897d; display: grid; place-items: center; text-align: center; transform: rotate(6deg); background: rgba(26,21,17,0.92); box-shadow: 0 12px 28px rgba(0,0,0,0.4)">
+          <div>
+            <div style="font-family: Spectral, serif; font-size: 30px; font-weight: 600; line-height: 1">34</div>
+            <div style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; margin-top: 2px">Not ready</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding-top: 4px">
+        <p style="margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #a5947a">The studio's verdict</p>
+        <h1 style="margin: 0 0 12px; font-family: Spectral, serif; font-weight: 400; font-size: 38px; line-height: 1.15; text-wrap: pretty">Kai isn't ready yet. Two blockers come first — everything else can wait.</h1>
+        <p style="margin: 0 0 14px; font-size: 15.5px; color: #bfae95; max-width: 58ch; text-wrap: pretty">There's a character in here — a lighthouse keeper who lies about the weather — but the card can't teach a model his voice yet: no example dialogue, a placeholder where the scenario should be, and an 812-word description drowning the good parts.</p>
+        <p style="margin: 0; font-size: 13px; color: #7d6f5b">14 findings total · merged into 2 blockers, 5 gated improvements, and 4 polish notes</p>
+      </div>
+    </section>
+
+    <!-- Start here -->
+    <section>
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px">
+        <h2 style="margin: 0; font-family: Spectral, serif; font-weight: 500; font-size: 23px">Start here</h2>
+        <span style="font-size: 13px; color: #a5947a">these two block everything downstream</span>
+      </div>
+      <div style="display: grid; gap: 12px">
+        <sc-for list="{{ blockers }}" as="b" hint-placeholder-count="2">
+          <article style="border: 1px solid rgba(226,137,125,0.35); border-radius: 14px; background: linear-gradient(180deg, rgba(226,137,125,0.06), rgba(226,137,125,0.015)); padding: 18px 22px">
+            <div style="display: flex; gap: 13px; align-items: baseline">
+              <span style="flex: none; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #e2897d; background: rgba(226,137,125,0.12); border-radius: 999px; padding: 3px 11px">{{ b.badge }}</span>
+              <div style="min-width: 0">
+                <h3 style="margin: 0 0 3px; font-size: 15.5px; font-weight: 600">{{ b.title }}</h3>
+                <p style="margin: 0; font-size: 13.5px; color: #a5947a; text-wrap: pretty">{{ b.reason }}</p>
+              </div>
+            </div>
+            <div style="margin: 13px 0 0; border: 1px solid #2c251b; border-radius: 10px; background: #17120d; padding: 12px 14px">
+              <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #7d6f5b; margin-bottom: 6px">{{ b.fixLabel }}</div>
+              <pre style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #d8cdb9; white-space: pre-wrap">{{ b.fix }}</pre>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; margin-top: 12px">
+              <button onClick="{{ b.onApply }}" style="border: 1px solid #4a4030; border-radius: 9px; background: {{ b.applyBg }}; color: {{ b.applyColor }}; min-height: 38px; padding: 0 16px; font-size: 13.5px; font-weight: 700; font-family: inherit; cursor: pointer" style-hover="border-color: #e2897d">{{ b.applyLabel }}</button>
+              <span style="margin-left: auto; font-size: 12.5px; color: #7d6f5b">{{ b.effect }}</span>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- Gated queue -->
+    <section style="border: 1px dashed #383024; border-radius: 14px; padding: 18px 22px; background: {{ gateBg }}">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px">
+        <span style="font-size: 15px">{{ gateIcon }}</span>
+        <h2 style="margin: 0; font-family: Spectral, serif; font-weight: 500; font-size: 19px; color: {{ gateTitleColor }}">{{ gateTitle }}</h2>
+        <button onClick="{{ onRescore }}" style="margin-left: auto; border: 0; border-radius: 9px; background: {{ rescoreBg }}; color: {{ rescoreColor }}; min-height: 36px; padding: 0 16px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: {{ rescoreCursor }}" style-hover="opacity: 0.9">Re-analyze</button>
+      </div>
+      <div style="display: grid; gap: 6px">
+        <sc-for list="{{ gated }}" as="g" hint-placeholder-count="5">
+          <div style="display: flex; align-items: baseline; gap: 12px; opacity: {{ g.opacity }}; font-size: 13.5px">
+            <span style="flex: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #7d6f5b; min-width: 52px">{{ g.delta }}</span>
+            <span style="color: {{ g.color }}; font-weight: 600">{{ g.title }}</span>
+            <span style="color: #7d6f5b">{{ g.note }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- Polish drawer -->
+    <details style="border: 1px solid #332b20; border-radius: 12px; background: #1e1812">
+      <summary style="cursor: pointer; padding: 12px 16px; font-size: 13.5px; font-weight: 600; color: #a5947a; list-style-position: inside">4 polish notes — style and playability advice, never counted against him</summary>
+      <div style="padding: 4px 16px 14px; display: grid; gap: 8px">
+        <sc-for list="{{ polish }}" as="p" hint-placeholder-count="4">
+          <div style="display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: baseline; font-size: 13px">
+            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #7d6f5b">{{ p.kind }}</span>
+            <span style="color: #bfae95">{{ p.text }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </details>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1180, &quot;height&quot;: 1560}}">
+class Component extends DCLogic {
+  state = { applied: {}, rescored: false };
+
+  renderVals() {
+    const { applied, rescored } = this.state;
+    const bothApplied = applied.examples && applied.description;
+    const unlocked = rescored && bothApplied;
+    return {
+      onRescore: () => { if (bothApplied) this.setState({ rescored: true }); },
+      gateBg: unlocked ? "rgba(147,203,164,0.04)" : "transparent",
+      gateIcon: unlocked ? "✓" : "🔒",
+      gateTitle: unlocked ? "Unlocked — 5 improvements now actionable" : "5 more improvements unlock after the blockers",
+      gateTitleColor: unlocked ? "#93cba4" : "#a5947a",
+      rescoreBg: bothApplied && !rescored ? "#e2897d" : "#2a241c",
+      rescoreColor: bothApplied && !rescored ? "#241a0e" : "#7d6f5b",
+      rescoreCursor: bothApplied && !rescored ? "pointer" : "default",
+      blockers: [
+        {
+          id: "examples",
+          badge: "blocker",
+          title: "He has no voice — add example dialogue",
+          reason: "mes_example is empty. Rubric: −12. Playability: no dialogue anchors for any stated trait. AI review is gated until this exists — drafts would be pure invention.",
+          fixLabel: "Starter template · fill with his actual voice",
+          fix: "<START>\n{{user}}: Is the light supposed to flicker like that?\n{{char}}: *Kai doesn't look up from the logbook.* \"Clear skies tonight. Calm seas.\" *Outside, the storm takes the weathervane.*",
+          effect: "~+12 pts · unlocks AI drafting",
+        },
+        {
+          id: "description",
+          badge: "blocker",
+          title: "Cut the description from 812 words to ~150",
+          reason: "Rubric: token efficiency 1/10 — permanent context this heavy crowds out chat history on every model. The scenario field holds \"TBD\" while the description tries to do its job.",
+          fixLabel: "Suggested cut · keeps every load-bearing fact",
+          fix: "Keep: lighthouse keeper, lies about weather to keep ships away, sister lost to a rescue he called off.\nMove to scenario: the inspector arriving tonight.\nMove to lorebook: island history, the wreck of the Anselm, keeper's code.\nDelete: 9 paragraphs of routine, furniture, and meals.",
+          effect: "~+9 pts · frees ~660 permanent words",
+        },
+      ].map((b) => ({
+        ...b,
+        applyLabel: applied[b.id] ? "Applied ✓ (undo)" : "Apply",
+        applyBg: applied[b.id] ? "rgba(147,203,164,0.12)" : "transparent",
+        applyColor: applied[b.id] ? "#93cba4" : "#ede3d3",
+        onApply: () => this.setState((s) => ({ applied: { ...s.applied, [b.id]: !s.applied[b.id] }, rescored: false })),
+      })),
+      gated: [
+        { delta: "~+6", title: "Write the scenario", note: "replace \"TBD\" with the inspector's visit" },
+        { delta: "~+4", title: "Rewrite the greeting", note: "\"Hi, I'm Kai.\" sets no scene and asks nothing" },
+        { delta: "~+3", title: "Seed a lorebook", note: "island history has keys ready to use" },
+        { delta: "~+2", title: "Prune 23 tags to 6", note: "spammy tags hurt discovery and metadata score" },
+        { delta: "~+1", title: "Add creator notes", note: "say what kind of story he's for" },
+      ].map((g) => ({ ...g, opacity: unlocked ? "1" : "0.45", color: unlocked ? "#ede3d3" : "#a5947a" })),
+      polish: [
+        { kind: "style", text: "Personality is adjective-only (\"mysterious, grumpy, secretive\") — give each trait a when and a why." },
+        { kind: "style", text: "Description slips between second and third person — pick third and stay there." },
+        { kind: "playability", text: "No unresolved tension anywhere — the inspector's visit could be one." },
+        { kind: "model note", text: "At 812 permanent words, small local models would forget chat history within ~10 turns." },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

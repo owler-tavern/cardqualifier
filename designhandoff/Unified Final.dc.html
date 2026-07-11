@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="./image-slot.js"></script>
+  <style>
+    body { margin: 0; background: #1a1511; }
+    a { color: #dfa04f; } a:hover { color: #f0bd77; }
+  </style>
+</helmet>
+<div style="min-height: 100vh; background: radial-gradient(1200px 500px at 50% -10%, #241d15, #1a1511 70%) #1a1511; color: #ede3d3; font-family: 'Instrument Sans', system-ui, sans-serif; line-height: 1.5" data-screen-label="Unified final — one pipeline">
+
+  <header style="display: flex; align-items: center; gap: 28px; max-width: 1080px; margin: 0 auto; padding: 22px 32px 0">
+    <span style="font-family: Spectral, serif; font-size: 19px; font-weight: 600">CardQualifier</span>
+    <nav style="display: flex; gap: 4px; margin-left: auto; align-items: center">
+      <sc-for list="{{ steps }}" as="step" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 14px; background: {{ step.bg }}; border: 1px solid {{ step.border }}">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: {{ step.numColor }}">{{ step.num }}</span>
+          <span style="font-size: 13px; font-weight: 600; color: {{ step.color }}">{{ step.label }}</span>
+        </div>
+      </sc-for>
+      <button onClick="{{ noop }}" style="margin-left: 12px; border: 1px solid #383024; border-radius: 999px; background: none; color: #a5947a; padding: 6px 14px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer" style-hover="color: #ede3d3; border-color: #55483a">Reviewer ⚙</button>
+    </nav>
+  </header>
+
+  <main style="max-width: 1080px; margin: 0 auto; padding: 40px 32px 64px; display: grid; gap: 36px">
+
+    <!-- Verdict -->
+    <section style="display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 40px; align-items: start">
+      <div style="position: relative">
+        <div style="width: 240px; height: 320px; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.45); border: 1px solid #3d3427; transform: rotate(-1.2deg)">
+          <image-slot id="uf-portrait" shape="rounded" radius="14" placeholder="Kai.png — art tints the studio" style="width: 240px; height: 320px"></image-slot>
+        </div>
+        <div style="position: absolute; right: -18px; bottom: -14px; width: 96px; height: 96px; border-radius: 999px; border: 2px solid {{ stampColor }}; color: {{ stampColor }}; display: grid; place-items: center; text-align: center; transform: rotate(6deg); background: rgba(26,21,17,0.92); box-shadow: 0 12px 28px rgba(0,0,0,0.4)">
+          <div>
+            <div style="font-family: Spectral, serif; font-size: 31px; font-weight: 600; line-height: 1">{{ score }}</div>
+            <div style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 2px">{{ band }}</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding-top: 4px">
+        <p style="margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #a5947a">The studio's verdict · one review, every engine behind it</p>
+        <h1 style="margin: 0 0 12px; font-family: Spectral, serif; font-weight: 400; font-size: 38px; line-height: 1.15; text-wrap: pretty">{{ headline }}</h1>
+        <p style="margin: 0 0 16px; font-size: 15.5px; color: #bfae95; max-width: 58ch; text-wrap: pretty">There's a character in here — a lighthouse keeper who lies about the weather — but fourteen findings live in just three fields. Fix a field once and everything inside it clears together.</p>
+        <details style="border: 1px solid #332b20; border-radius: 12px; background: #1e1812">
+          <summary style="cursor: pointer; padding: 11px 15px; font-size: 13px; font-weight: 600; color: #a5947a; list-style-position: inside">How this was assessed — 10 checks · rubric scores, playability and style advise, AI only drafts</summary>
+          <div style="padding: 4px 15px 13px; font-size: 12.5px; color: #7d6f5b; line-height: 1.6">Structure 4/15 · Substance 9/25 · Opening 3/15 · Examples 0/15 · Efficiency 1/10 · Metadata 4/10 · Lorebook 3/10 — plus three score-neutral style checks: perspective (mixing found), positive framing (pass), trait anchoring (0 of 3 anchored). Every point traceable; nothing decided by a model.</div>
+        </details>
+      </div>
+    </section>
+
+    <!-- Steering -->
+    <div style="border: 1px solid {{ accentBorder }}; border-radius: 14px; background: {{ steerBg }}; padding: 15px 20px">
+      <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: {{ accent }}">Steer this review</span>
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span style="font-size: 12.5px; color: #a5947a">Written for</span>
+          <div style="display: inline-flex; gap: 4px; border: 1px solid #383024; border-radius: 999px; background: #1e1812; padding: 3px">
+            <sc-for list="{{ lenses }}" as="lens" hint-placeholder-count="3">
+              <button onClick="{{ lens.onClick }}" style="border: 0; border-radius: 999px; background: {{ lens.bg }}; color: {{ lens.color }}; padding: 4px 12px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer" style-hover="color: #ede3d3">{{ lens.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span style="font-size: 12.5px; color: #a5947a">Take him</span>
+          <div style="display: inline-flex; gap: 4px">
+            <sc-for list="{{ tones }}" as="tone" hint-placeholder-count="4">
+              <button onClick="{{ tone.onClick }}" style="border: 1px solid {{ tone.border }}; border-radius: 999px; background: {{ tone.bg }}; color: {{ tone.color }}; padding: 3px 12px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer" style-hover="border-color: {{ accent }}">{{ tone.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <span style="margin-left: auto; font-size: 12px; color: #7d6f5b">retunes fixes and drafts · never the score</span>
+      </div>
+    </div>
+
+    <!-- Start here: merged field blockers -->
+    <section>
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px">
+        <h2 style="margin: 0; font-family: Spectral, serif; font-weight: 500; font-size: 23px">Start here</h2>
+        <span style="font-size: 13px; color: #a5947a">two fields block everything · each card is every engine's findings, merged</span>
+      </div>
+      <div style="display: grid; gap: 12px">
+        <sc-for list="{{ blockers }}" as="f" hint-placeholder-count="2">
+          <article style="border: 1px solid {{ f.cardBorder }}; border-radius: 14px; background: {{ f.cardBg }}; padding: 18px 22px">
+            <div style="display: flex; gap: 13px; align-items: baseline; flex-wrap: wrap">
+              <span style="flex: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: {{ stampColor }}; background: rgba(226,137,125,0.1); border-radius: 6px; padding: 3px 9px">{{ f.field }}</span>
+              <h3 style="margin: 0; font-size: 15.5px; font-weight: 600">{{ f.title }}</h3>
+              <span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: {{ stampColor }}">{{ f.leverage }}</span>
+            </div>
+            <div style="display: grid; gap: 5px; margin: 12px 0 0">
+              <sc-for list="{{ f.findings }}" as="fd" hint-placeholder-count="4">
+                <div style="display: grid; grid-template-columns: 92px 1fr; gap: 10px; align-items: baseline; font-size: 13px">
+                  <span style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: {{ fd.color }}">{{ fd.engine }}</span>
+                  <span style="color: #bfae95; text-wrap: pretty">{{ fd.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin: 13px 0 0; border: 1px solid #2c251b; border-radius: 10px; background: #17120d; padding: 12px 14px">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px">
+                <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #7d6f5b">{{ f.fixLabel }}</div>
+                <div style="font-size: 11px; color: #55483a">click to edit before applying</div>
+              </div>
+              <textarea key="{{ f.fixKey }}" defaultValue="{{ f.fixText }}" spellcheck="{{ false }}" rows="{{ f.fixRows }}" style="display: block; width: 100%; box-sizing: border-box; resize: vertical; border: 1px solid transparent; border-radius: 8px; background: transparent; margin: 0; padding: 0; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #d8cdb9; white-space: pre-wrap" style-focus="border-color: #4a4030; background: #1a1410; padding: 8px; outline: none"></textarea>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; margin-top: 12px">
+              <button onClick="{{ f.onApply }}" style="border: 1px solid #4a4030; border-radius: 9px; background: {{ f.applyBg }}; color: {{ f.applyColor }}; min-height: 38px; padding: 0 16px; font-size: 13.5px; font-weight: 700; font-family: inherit; cursor: pointer" style-hover="border-color: {{ accent }}">{{ f.applyLabel }}</button>
+              <button onClick="{{ f.onDraft }}" style="border: 0; background: none; color: {{ accent }}; padding: 0; font-size: 13.5px; font-weight: 600; font-family: inherit; cursor: pointer" style-hover="color: {{ accentBright }}">{{ f.draftLabel }}</button>
+              <span style="margin-left: auto; font-size: 12.5px; color: #7d6f5b">clears {{ f.count }} findings at once</span>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- Gated queue -->
+    <section style="border: 1px dashed #383024; border-radius: 14px; padding: 16px 22px; background: {{ gateBg }}">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px">
+        <span style="font-size: 14px">{{ gateIcon }}</span>
+        <h2 style="margin: 0; font-family: Spectral, serif; font-weight: 500; font-size: 18px; color: {{ gateTitleColor }}">{{ gateTitle }}</h2>
+        <button onClick="{{ onRescore }}" style="margin-left: auto; border: 0; border-radius: 9px; background: {{ rescoreBg }}; color: {{ rescoreColor }}; min-height: 34px; padding: 0 15px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: {{ rescoreCursor }}">Re-analyze</button>
+      </div>
+      <div style="display: grid; gap: 5px">
+        <sc-for list="{{ gated }}" as="g" hint-placeholder-count="3">
+          <div style="display: flex; align-items: baseline; gap: 12px; opacity: {{ g.opacity }}; font-size: 13.5px">
+            <span style="flex: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #7d6f5b; min-width: 48px">{{ g.delta }}</span>
+            <span style="color: {{ g.color }}; font-weight: 600">{{ g.title }}</span>
+            <span style="color: #7d6f5b">{{ g.note }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- Polish drawer + export -->
+    <details style="border: 1px solid #332b20; border-radius: 12px; background: #1e1812">
+      <summary style="cursor: pointer; padding: 12px 16px; font-size: 13.5px; font-weight: 600; color: #a5947a; list-style-position: inside">4 polish notes — advice only, never counted</summary>
+      <div style="padding: 4px 16px 14px; font-size: 13px; color: #bfae95; line-height: 1.6">Adjective-only personality · person-mixing in the description · no unresolved tension yet · too heavy for small models at current weight.</div>
+    </details>
+
+    <section style="border: 1px solid #383024; border-radius: 16px; background: linear-gradient(180deg, #241d15, #1e1812); padding: 22px 28px; display: flex; align-items: center; gap: 24px">
+      <div style="min-width: 0">
+        <h2 style="margin: 0 0 3px; font-family: Spectral, serif; font-weight: 500; font-size: 20px">Send him home</h2>
+        <p style="margin: 0; font-size: 13px; color: #a5947a">Art untouched — only the embedded text chunks change.</p>
+      </div>
+      <div style="margin-left: auto; display: flex; gap: 10px; flex: none">
+        <button style="border: 0; border-radius: 10px; background: #ede3d3; color: #241a0e; min-height: 42px; padding: 0 18px; font-size: 13.5px; font-weight: 700; font-family: inherit; cursor: pointer" style-hover="background: #fff">Download PNG</button>
+        <button style="border: 1px solid #4a4030; border-radius: 10px; background: none; color: #ede3d3; min-height: 42px; padding: 0 15px; font-size: 13.5px; font-weight: 600; font-family: inherit; cursor: pointer" style-hover="border-color: #6a5c46">JSON</button>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1180, &quot;height&quot;: 2140}}">
+class Component extends DCLogic {
+  state = { applied: {}, drafted: {}, rescored: false, model: "any", tone: "true", artHue: null };
+
+  componentDidMount() {
+    this._poll = setInterval(() => {
+      const slot = document.getElementById("uf-portrait");
+      const img = slot && slot.shadowRoot && slot.shadowRoot.querySelector("img");
+      const src = img && img.currentSrc;
+      if (!src || src === this._lastSrc || !img.naturalWidth) return;
+      this._lastSrc = src;
+      try {
+        const c = document.createElement("canvas");
+        c.width = c.height = 32;
+        const x = c.getContext("2d", { willReadFrequently: true });
+        x.drawImage(img, 0, 0, 32, 32);
+        const d = x.getImageData(0, 0, 32, 32).data;
+        let sx = 0, sy = 0, w = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255;
+          const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+          const sat = max === min ? 0 : (max - min) / (1 - Math.abs(2 * l - 1));
+          if (sat < 0.15 || l < 0.12 || l > 0.9) continue;
+          let h;
+          if (max === r) h = ((g - b) / (max - min) + 6) % 6;
+          else if (max === g) h = (b - r) / (max - min) + 2;
+          else h = (r - g) / (max - min) + 4;
+          h = h * 60;
+          const wgt = sat * sat;
+          sx += Math.cos(h * Math.PI / 180) * wgt;
+          sy += Math.sin(h * Math.PI / 180) * wgt;
+          w += wgt;
+        }
+        if (w > 2) this.setState({ artHue: Math.round((Math.atan2(sy, sx) * 180 / Math.PI + 360) % 360) });
+      } catch (e) {}
+    }, 900);
+  }
+
+  componentWillUnmount() { clearInterval(this._poll); }
+
+  renderVals() {
+    const { applied, drafted, rescored, model, tone, artHue } = this.state;
+    const accent = artHue == null ? "#dfa04f" : "hsl(" + artHue + ", 58%, 62%)";
+    const accentBright = artHue == null ? "#f0bd77" : "hsl(" + artHue + ", 65%, 74%)";
+    const aRGBA = (a) => artHue == null ? "rgba(223,160,79," + a + ")" : "hsla(" + artHue + ", 58%, 62%, " + a + ")";
+    const engines = { rubric: "#e0a463", playability: "#9db8a0", style: "#a5947a", drafter: accent };
+    const bothApplied = applied.examples && applied.scenario;
+    const unlocked = rescored && bothApplied;
+    const appliedCount = (applied.examples ? 1 : 0) + (applied.scenario ? 1 : 0);
+    const score = 34 + (applied.examples ? 12 : 0) + (applied.scenario ? 10 : 0);
+
+    const toneWhy = { true: "grounded in the card", quirky: "leans into the deadpan logbook humor", dark: "lets the sister's ghost into the room", warm: "gives the lie a reason to soften" };
+    const drafts = {
+      examples: {
+        plain: "<START>\n{{user}}: Is the light supposed to flicker like that?\n{{char}}: *Kai doesn't look up from the logbook.* \"Clear skies tonight. Calm seas.\" *Outside, the storm takes the weathervane.*",
+        true: "<START>\n{{user}}: Is the light supposed to flicker like that?\n{{char}}: *Kai doesn't look up from the logbook.* \"Clear skies tonight. Calm seas.\" *Outside, the storm takes the weathervane.*",
+        quirky: "<START>\n{{user}}: Your log says it hasn't rained in a year.\n{{char}}: *Kai stamps the page without reading it.* \"Driest island in the sea. The puddles are decorative. Mind the decorative lightning on your way out.\"",
+        dark: "<START>\n{{user}}: Why lie about the weather?\n{{char}}: *Kai's pen stops.* \"The last true forecast I gave sent a rescue boat out. My sister rowed it.\" *He writes 'clear skies' with perfect penmanship.*",
+        warm: "<START>\n{{user}}: The log says calm seas. It isn't calm.\n{{char}}: *Kai finally looks up, tired.* \"Every lie in that book kept some fool ashore with their family. Sit. I'll make tea and tell you which storms were real.\"",
+      },
+      scenario: {
+        plain: "scenario: An inspector arrives tonight to audit the weather log — every entry for the last year is a lie.\n\nfirst_mes: *Kai watches the boat's lantern crawl closer through real rain his logbook calls \"clear.\"* \"You'll want dry boots for this conversation. Ask me why.\"",
+        true: "scenario: An inspector arrives tonight to audit the weather log — every entry for the last year is a lie.\n\nfirst_mes: *Kai watches the boat's lantern crawl closer through real rain his logbook calls \"clear.\"* \"You'll want dry boots for this conversation. Ask me why.\"",
+        quirky: "scenario: Tonight's audit will compare Kai's logbook against the wettest year on record. He has one evening and one pot of tea to invent a climate.\n\nfirst_mes: *Kai sets two cups on the table — one for the inspector, one for the drip from the ceiling his log calls \"a dry spell.\"* \"Before you open that book: how do you feel about metaphor?\"",
+        dark: "scenario: The inspector's boat is due at dusk. The last person who read the true log is buried behind the lighthouse.\n\nfirst_mes: *Kai stands where the light doesn't reach, listening to oars.* \"One year of clear skies in that book. One grave that says otherwise. You can read either. Not both.\"",
+        warm: "scenario: The inspector arriving tonight is the first visitor in months — and the first person who might understand why every lie in the log saved a life.\n\nfirst_mes: *Kai leaves the door open against the rain and pushes a dry chair toward the fire.* \"Read the book if you must. But let me tell you about the night I started lying.\"",
+      },
+    };
+    const fieldData = [
+      {
+        id: "examples", field: "mes_example", title: "He has no voice", leverage: "~+12 pts", count: 4,
+        findings: [
+          { engine: "rubric", text: "Example messages empty — the strongest voice-teaching field is unused (0/15)." },
+          { engine: "playability", text: "None of his 3 stated traits has a dialogue anchor to imitate." },
+          { engine: "style", text: "Nothing demonstrates the lying-about-weather behavior the description promises." },
+          { engine: "drafter", text: "Ready to draft once you pick a direction — see \"Take him.\"" },
+        ],
+      },
+      {
+        id: "scenario", field: "scenario + first_mes", title: "His opening says \"TBD\"", leverage: "~+10 pts", count: 5,
+        findings: [
+          { engine: "rubric", text: "Scenario is placeholder text (−6); greeting sets no scene (−4)." },
+          { engine: "playability", text: "\"Hi, I'm Kai.\" asks nothing — no live question, no unresolved tension." },
+          { engine: "style", text: "Even one sensory detail would anchor the scene." },
+          { engine: "drafter", text: "Draft ready: the inspector's audit gives him a deadline and a secret." },
+        ],
+      },
+    ];
+
+    return {
+      accent, accentBright,
+      accentBorder: aRGBA(0.25),
+      steerBg: "linear-gradient(180deg, " + aRGBA(0.06) + ", " + aRGBA(0.015) + ")",
+      stampColor: score >= 50 ? "#e0a463" : "#e2897d",
+      score: String(score),
+      band: score >= 50 ? "Mixed" : "Not ready",
+      headline: appliedCount === 0 ? "Kai isn't ready yet. Two fields block everything — start there." : appliedCount === 1 ? "One blocker down. One more and the rest of the queue opens." : "Both blockers cleared. Re-analyze to unlock the queue.",
+      noop: (e) => e.preventDefault(),
+      steps: [
+        { num: "1", label: "Load", color: "#7d6f5b", numColor: "#55483a", bg: "transparent", border: "transparent" },
+        { num: "2", label: "Review", color: "#ede3d3", numColor: accent, bg: "#2a2318", border: "#4a4030" },
+        { num: "3", label: "Export", color: "#a5947a", numColor: "#55483a", bg: "transparent", border: "transparent" },
+      ],
+      lenses: [
+        { id: "any", label: "Any model" }, { id: "gpt", label: "GPT" }, { id: "small", label: "Small local" },
+      ].map((l) => ({
+        ...l,
+        bg: model === l.id ? aRGBA(0.16) : "transparent",
+        color: model === l.id ? accentBright : "#a5947a",
+        onClick: () => this.setState({ model: l.id }),
+      })),
+      tones: [
+        { id: "true", label: "As he is" }, { id: "quirky", label: "Quirkier" }, { id: "dark", label: "Darker" }, { id: "warm", label: "Warmer" },
+      ].map((t) => ({
+        ...t,
+        bg: tone === t.id ? aRGBA(0.14) : "transparent",
+        color: tone === t.id ? accentBright : "#a5947a",
+        border: tone === t.id ? aRGBA(0.4) : "#383024",
+        onClick: () => this.setState({ tone: t.id }),
+      })),
+      blockers: fieldData.map((f) => {
+        const isOn = !!applied[f.id];
+        const isDrafted = !!drafted[f.id];
+        return {
+          ...f,
+          findings: f.findings.map((fd) => ({ ...fd, color: engines[fd.engine] })),
+          cardBg: isOn ? "#1e2119" : "linear-gradient(180deg, rgba(226,137,125,0.05), rgba(226,137,125,0.01))",
+          cardBorder: isOn ? "#3a4a38" : "rgba(226,137,125,0.35)",
+          fixLabel: isDrafted ? "AI draft · " + toneWhy[tone] + " · resolves all " + f.count + " findings" : "Combined fix · resolves all " + f.count + " findings",
+          fixText: isDrafted ? drafts[f.id][tone] : drafts[f.id].plain,
+          fixKey: f.id + (isDrafted ? "-ai-" + tone : "-plain"),
+          fixRows: isDrafted ? 6 : 5,
+          draftLabel: isDrafted ? "Back to the plain template" : "Need a stronger draft? Ask the reviewer →",
+          onDraft: () => this.setState((s) => ({ drafted: { ...s.drafted, [f.id]: !s.drafted[f.id] } })),
+          applyLabel: isOn ? "Applied ✓ (undo)" : "Apply",
+          applyBg: isOn ? "rgba(147,203,164,0.12)" : "transparent",
+          applyColor: isOn ? "#93cba4" : "#ede3d3",
+          onApply: () => this.setState((s) => ({ applied: { ...s.applied, [f.id]: !s.applied[f.id] }, rescored: false })),
+        };
+      }),
+      onRescore: () => { if (bothApplied) this.setState({ rescored: true }); },
+      gateBg: unlocked ? "rgba(147,203,164,0.04)" : "transparent",
+      gateIcon: unlocked ? "✓" : "🔒",
+      gateTitle: unlocked ? "Unlocked — 3 improvements now actionable" : "3 more improvements unlock after the blockers",
+      gateTitleColor: unlocked ? "#93cba4" : "#a5947a",
+      rescoreBg: bothApplied && !rescored ? accent : "#2a241c",
+      rescoreColor: bothApplied && !rescored ? "#241a0e" : "#7d6f5b",
+      rescoreCursor: bothApplied && !rescored ? "pointer" : "default",
+      gated: [
+        { delta: "~+9", title: "Cut the description to ~150 words", note: "keeps every load-bearing fact" },
+        { delta: "~+3", title: "Seed a lorebook", note: "island history has keys ready" },
+        { delta: "~+2", title: "Prune 23 tags to 6", note: "honest tags help discovery" },
+      ].map((g) => ({ ...g, opacity: unlocked ? "1" : "0.45", color: unlocked ? "#ede3d3" : "#a5947a" })),
+    };
+  }
+}
+</script>
+</body>
+</html>
