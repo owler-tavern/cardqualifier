@@ -12,6 +12,18 @@ test("emits auditable rubric findings in the shared Finding shape", () => {
   assert.ok(result.reviewFindings.some((finding) => finding.field === "mes_example"));
 });
 
+test("rejects JSON that is not a card object (array, primitive, or null)", () => {
+  for (const bad of ["[1,2,3]", "42", "null", '"a string"', "true"]) {
+    assert.throws(() => parseCard(bad), /isn't a character card/, `expected ${bad} to be rejected`);
+    assert.throws(() => scoreCard(bad), /isn't a character card/, `expected scoreCard(${bad}) to reject`);
+  }
+});
+
+test("still accepts a structurally valid (even if empty) card object", () => {
+  assert.doesNotThrow(() => parseCard("{}"));
+  assert.doesNotThrow(() => parseCard(JSON.stringify({ name: "Ok", description: "A card." })));
+});
+
 test("parses Character Card V2 data", () => {
   const card = parseCard(JSON.stringify({
     spec: "chara_card_v2",

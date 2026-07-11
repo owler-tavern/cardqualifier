@@ -28,7 +28,11 @@ export function parseCard(input) {
     throw new Error("Expected card JSON text.");
   }
 
-  return normalizeObject(JSON.parse(input));
+  const parsed = JSON.parse(input);
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("This JSON isn't a character card — expected an object with card fields.");
+  }
+  return normalizeObject(parsed);
 }
 
 export function normalizeObject(input) {
