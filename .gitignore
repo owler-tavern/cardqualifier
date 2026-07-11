@@ -1,0 +1,16 @@
+# Agent / tooling scratch (not app code)
+.superpowers/
+.impeccable/
+.codex/
+tasks/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
