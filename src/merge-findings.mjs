@@ -8,7 +8,7 @@ export function mergeFindings(findings = [], { targetModel = "any", appliedFindi
     blockers,
     improvements,
     advisories: findings.filter((finding) => finding.severity === "advisory"),
-    gate: { open: !unresolved && gateOpen, reason: unresolved ? "Apply every blocker, then re-analyze to unlock the queue." : gateOpen ? "Unlocked" : "Re-analyze to unlock the queue." },
+    gate: { open: !unresolved && gateOpen, reason: unresolved ? "Improvements stay locked until every blocker is cleared — this keeps you fixing what breaks the card first." : gateOpen ? "Queue open — these are actionable now." : "Blockers cleared. Re-analyze to open the improvement queue." },
   };
 }
 

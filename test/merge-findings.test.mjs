@@ -17,3 +17,19 @@ test("weak fixture flows through detectors into a closed blocker gate", async ()
   assert.ok(plan.blockers.find((card) => card.field === "description").leverage >= 7);
   assert.ok(plan.advisories.every((finding) => finding.estimatedDelta === 0));
 });
+
+test("gate copy explains the blocker-first lock and the unlock states", () => {
+  const blocker = { id: "b1", field: "scenario", severity: "blocker", estimatedDelta: 8 };
+  const improvement = { id: "i1", field: "personality", severity: "improvement", estimatedDelta: 5 };
+
+  const locked = mergeFindings([blocker, improvement], { gateOpen: false });
+  assert.match(locked.gate.reason, /blocker/i);
+  assert.equal(locked.gate.open, false);
+
+  const clearedButClosed = mergeFindings([improvement], { appliedFindingIds: [], gateOpen: false });
+  assert.match(clearedButClosed.gate.reason, /re-analyze/i);
+
+  const opened = mergeFindings([improvement], { gateOpen: true });
+  assert.equal(opened.gate.open, true);
+  assert.match(opened.gate.reason, /open|actionable/i);
+});
