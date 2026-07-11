@@ -41,7 +41,11 @@ body {
   display:flex;
   align-items:center;
   gap:18px;
-  justify-content:space-between
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:var(--bg)
 }
 
 .topbar strong,h1,h2 {
