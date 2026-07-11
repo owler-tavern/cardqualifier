@@ -16,6 +16,10 @@
   --bad:#e2897d
 }
 
+html {
+  scroll-padding-top:48px
+}
+
 [hidden] {
   display:none!important
 }
