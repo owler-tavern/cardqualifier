@@ -578,3 +578,10 @@ dialog input,dialog select {
   font:inherit;
   font-weight:600
 }
+.scope-note {
+  margin-top:12px;
+  color:var(--muted);
+  font-size:13px;
+  text-align:center;
+  max-width:40ch
+}
