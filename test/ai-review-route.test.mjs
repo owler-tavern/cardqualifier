@@ -40,6 +40,10 @@ function providerJson(review) {
   return { ok: true, status: 200, json: async () => ({ output_text: JSON.stringify(review) }) };
 }
 
+function providerRawText(text) {
+  return { ok: true, status: 200, json: async () => ({ output_text: text }) };
+}
+
 const askBody = {
   card: JSON.stringify({ data: { name: "Mara", personality: "Guarded." } }),
   aiConfig: { apiKey: "test-key" },
@@ -87,6 +91,22 @@ test("route logs the raw output when every suggestion is dropped", async () => {
       assert.equal(response.payload.suggestions.length, 0);
       assert.equal(warnings.length, 1);
       assert.match(warnings[0], /no usable suggestions for field "personality"/);
+    },
+  );
+});
+
+test("route returns a clear error and logs raw text when the model output is not JSON", async () => {
+  await withStubbedFetch(
+    async () => providerRawText('{"summary":"ok","suggestions":[{"field":"personality","draft":"he said "hi'),
+    async (warnings) => {
+      const response = fakeResponse();
+      await handleAiReview(fakeRequest(askBody), response);
+
+      assert.equal(response.statusCode, 502);
+      assert.match(response.payload.error, /valid JSON/i);
+      assert.doesNotMatch(response.payload.error, /position \d+/);
+      assert.equal(warnings.length, 1);
+      assert.match(warnings[0], /unreadable model output/i);
     },
   );
 });

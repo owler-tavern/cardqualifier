@@ -90,7 +90,19 @@ export async function handleAiReview(request, response) {
     return sendJson(response, apiResponse.status, { error: apiJson.error?.message ?? "AI provider request failed" });
   }
 
-  const review = parseAiReviewResponse(apiJson);
+  let review;
+  try {
+    review = parseAiReviewResponse(apiJson);
+  } catch (parseError) {
+    console.warn(
+      `[ai-review] unreadable model output for field "${payload.targetField ?? "?"}": ${parseError.message}. Raw output:`,
+      safeExtractRawText(apiJson),
+    );
+    return sendJson(response, 502, {
+      error: "The reviewer's response wasn't valid JSON — the model likely ignored the structured-output format. Try again, or switch to a model with reliable JSON support.",
+    });
+  }
+
   if (!review.suggestions.length) {
     console.warn(
       `[ai-review] model returned no usable suggestions for field "${payload.targetField ?? "?"}". Raw output:`,
