@@ -83,7 +83,7 @@ function scoreStructure(card, data, findings) {
     });
   }
 
-  return criterion("Structure and compatibility", 15, points, "Required fields, V2 compliance, and import safety.");
+  return criterion("Structure and compatibility", 15, points, "Required fields, V2/V3 spec compliance, and import safety.");
 }
 
 function scoreSubstance(data, findings) {
