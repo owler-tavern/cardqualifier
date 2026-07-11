@@ -49,7 +49,7 @@ body {
   position:sticky;
   top:0;
   z-index:10;
-  background:var(--bg)
+  background:var(--raised)
 }
 
 .topbar strong,h1,h2 {
