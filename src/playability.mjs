@@ -129,9 +129,18 @@ function sentencesOf(value) {
   return out;
 }
 
+// Remove inline markdown emphasis and leading block markers so a paste-ready draft never
+// carries raw "*"/"_"/">" characters out of the source prose.
+function stripInline(value) {
+  return cleanText(value)
+    .replace(/[*_`]+/g, "")
+    .replace(/^\s*[>#\-]+\s*/, "")
+    .trim();
+}
+
 function causalDraft(data, evidence) {
   const name = cleanText(data.name) || "{{char}}";
-  const anchor = cleanText(evidence).replace(/\.$/, "");
+  const anchor = stripInline(evidence).replace(/\.$/, "");
   const cause = cleanLeadingConjunction(anchor);
   const behavior = visibleBehavior(anchor);
   return `Because ${cause ? cause.charAt(0).toLowerCase() + cause.slice(1) : "the card gives them a specific history"}, ${name} ${behavior}, so {{user}} has something concrete to notice, question, or challenge in the scene.`;
@@ -139,7 +148,7 @@ function causalDraft(data, evidence) {
 
 function greetingDraft(data, evidence) {
   const name = cleanText(data.name) || "{{char}}";
-  const anchor = cleanText(evidence);
+  const anchor = stripInline(evidence);
   return `*${anchor} ${name} ${visibleBehavior(anchor)}.* "Tell me what you saw before you came here, {{user}}. If you missed the wrong sign, we may already be too late."`;
 }
 
@@ -158,10 +167,15 @@ function visibleBehavior(evidence) {
 }
 
 function selectDraftEvidence(sources) {
-  return sources
+  // A causal draft should describe the character, so skip sentences whose subject is the
+  // user (e.g. "{{user}} spotted Barbara earlier") — they produce grammatically broken
+  // drafts about {{user}} rather than the character.
+  const characterFirst = sources.filter(({ text }) => !/\{\{user\}\}/i.test(text));
+  const pool = characterFirst.length ? characterFirst : sources;
+  return pool
     .filter(({ text }) => !isMetadata(text))
     .map((source) => ({ ...source, score: evidenceScore(source) }))
-    .sort((left, right) => right.score - left.score)[0]?.text || sources[0]?.text || "";
+    .sort((left, right) => right.score - left.score)[0]?.text || pool[0]?.text || "";
 }
 
 function evidenceScore({ text, field }) {

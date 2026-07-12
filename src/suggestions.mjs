@@ -1,7 +1,7 @@
 import {
   cloneJson,
   collectStats,
-  containsPlaceholder,
+  findPlaceholder,
   hasActionableHook,
   hasText,
   REQUIRED_V1_FIELDS,
@@ -69,7 +69,7 @@ export function buildSuggestions(data, criteria, playability) {
     }));
   }
 
-  if (scoreRatio(byLabel.get("Dialogue examples")) < 0.5) {
+  if (scoreRatio(byLabel.get("Voice")) < 0.5) {
     suggestions.push(suggestion({
       impact: 90,
       field: "mes_example",
@@ -134,15 +134,18 @@ export function buildSuggestions(data, criteria, playability) {
     }));
   }
 
-  if (containsPlaceholder(combinedDefinition)) {
+  const placeholderHit = ["description", "personality", "scenario"]
+    .map((field) => ({ field, match: findPlaceholder(data[field]) }))
+    .find((entry) => entry.match);
+  if (placeholderHit) {
     suggestions.push(suggestion({
       impact: 95,
       field: "cleanup",
       title: "Remove template leftovers",
-      reason: "Placeholder text is a strong low-quality signal and can leak into roleplay.",
+      reason: `Placeholder text "${placeholderHit.match}" in ${labelForField(placeholderHit.field)} is a strong low-quality signal and can leak into roleplay.`,
       options: [
-        "Search for placeholder, unknown, n/a, lorem ipsum, and to be filled.",
-        "Replace placeholders with short, intentional prose or remove the unfinished section.",
+        `Find "${placeholderHit.match}" in the ${labelForField(placeholderHit.field)} field.`,
+        "Replace it with short, intentional prose or remove the unfinished section.",
       ],
     }));
   }

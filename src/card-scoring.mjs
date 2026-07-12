@@ -6,7 +6,7 @@ import { buildSuggestions } from "./suggestions.mjs";
 import {
   clamp,
   collectStats,
-  containsPlaceholder,
+  findPlaceholder,
   hasActionableHook,
   hasContrastingTraits,
   hasText,
@@ -108,12 +108,13 @@ function scoreSubstance(data, findings) {
     });
   }
 
-  if (containsPlaceholder(combined)) {
+  const placeholder = findPlaceholder(combined);
+  if (placeholder) {
     points -= 5;
     findings.push({
       type: "problem",
       title: "Placeholder text detected",
-      detail: "Remove template leftovers before publishing the card.",
+      detail: `Remove the template leftover "${placeholder}" before publishing the card.`,
     });
   }
 

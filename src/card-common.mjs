@@ -3,8 +3,10 @@ export const PLACEHOLDER_PATTERNS = [
   /\blorem ipsum\b/i,
   /\bto be (filled|added|written)\b/i,
   /\bplaceholder\b/i,
-  /\bunknown\b/i,
-  /\bn\/a\b/i,
+  // "unknown" / "n/a" only count as template leftovers when they stand as a field value
+  // (after a label colon, a bracket, or alone on a line) — not as ordinary prose such as
+  // "pushes up her breasts to unknown size".
+  /(?:^|[:\[(\n])[ \t]*(?:unknown|n\/a)[ \t]*(?=$|[)\]\n.,;])/im,
 ];
 
 export function cloneJson(value) {
@@ -63,8 +65,17 @@ export function hasActionableHook(value) {
   return /[?]|\b(what do you|how do you|will you|can you|choose|decide|answer|help|tell me)\b/i.test(text(value));
 }
 
+export function findPlaceholder(value) {
+  const content = text(value);
+  for (const pattern of PLACEHOLDER_PATTERNS) {
+    const match = content.match(pattern);
+    if (match) return match[0].trim();
+  }
+  return null;
+}
+
 export function containsPlaceholder(value) {
-  return PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(text(value)));
+  return findPlaceholder(value) !== null;
 }
 
 export function repetitionRatio(value) {

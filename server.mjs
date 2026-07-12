@@ -161,7 +161,13 @@ function providerBody(config, cardText, options) {
 }
 
 async function serveStatic(pathname, response, headOnly) {
-  const cleanPath = pathname === "/" ? "/index.html" : pathname;
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(pathname);
+  } catch {
+    return sendJson(response, 400, { error: "Bad request path" });
+  }
+  const cleanPath = decodedPath === "/" ? "/index.html" : decodedPath;
   const filePath = normalize(join(root, cleanPath));
   if (!filePath.startsWith(root) || !existsSync(filePath)) {
     return sendJson(response, 404, { error: "Not found" });
