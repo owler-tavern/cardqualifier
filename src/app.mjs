@@ -6,10 +6,13 @@ import { connectPersistedSettings, readAiSettings } from "./review-settings.mjs"
 import { exportReadiness } from "./export-readiness.mjs";
 import { createBulkStore } from "./bulk-store.mjs";
 import { buildRecord, readCardFile, scanFiles } from "./bulk-scan.mjs";
+import { renderOverview } from "./bulk-view.mjs";
+import { toCsv, toJson } from "./score-report.mjs";
 
 const $ = (s) => document.querySelector(s); const file = $('#card-file'), review = $('#review'), empty = $('#empty-state');
 let text = '', sourcePng = null, result = null, applied = [], gateOpen = false, previous = null, ledger = [], targetModel = localStorage.getItem('cq.model') || 'any', creatorDirection = localStorage.getItem('cq.direction') || 'true', accent = '#dfa04f';
 const store = createBulkStore();
+const bulkState={sort:'score',dir:'desc',bands:null,query:''};
 // Write the live working vars into the active record (call before switching cards).
 function saveActive(){const rec=store.active();if(!rec)return;Object.assign(rec,{text,sourcePng,result,applied:[...applied],gateOpen,previous,ledger:[...ledger],name:result?result.name:rec.name,edited:rec.edited||applied.length>0});}
 // Load a record's fields into the live working vars (call after switching cards).
@@ -17,12 +20,37 @@ function hydrate(rec){text=rec.text;sourcePng=rec.sourcePng;result=rec.result;ap
 const sample = {spec:'chara_card_v2',spec_version:'2.0',data:{name:'Mara Venn',description:'Mara Venn is a retired courier from the brass city of Leth, known for memorizing routes through storms and border posts. She keeps coded maps inside her cuffs and refuses to abandon clients.',personality:'Warm but guarded, generous but allergic to sentimentality. She jokes when frightened and hates unpaid debts.',scenario:'{{user}} meets Mara at a shuttered station while a dust storm traps both of them inside. Someone outside knocks in a pattern Mara recognizes.',first_mes:'*Mara lowers the lantern.* "If you are here because of that knocking, answer quickly: did you hear three taps or four?"',mes_example:'<START>\n{{user}}: Why does the tapping matter?\n{{char}}: "Three means shelter. Four means danger."',creator_notes:'Tense travel and mystery.',tags:['mystery','mentor'],extensions:{}}};
 connectPersistedSettings($);
 file.addEventListener('change', async () => { if(file.files[0]) await load(file.files[0]); }); $('#sample-button').onclick=()=>{const rec=store.add(buildRecord({fileName:'mara-sample.json',text:JSON.stringify(sample),sourcePng:null}));store.setActive(rec.id);store.setWorklist([rec.id]);hydrate(rec);$('#card-art').hidden=true;$('#art-placeholder').hidden=false;showReview();afterAnalyze()}; $('#settings-button').onclick=()=>$('#settings').showModal(); $('#fetch-models-button').onclick=fetchModels; $('#download-button').onclick=downloadJson; $('#download-png-button').onclick=downloadPng; $('#undo-button').onclick=undo;
+$('#bulk-report-csv').onclick=()=>blob(toCsv(store.all()),'card-scores.csv','text/csv');
+$('#bulk-report-json').onclick=()=>blob(toJson(store.all()),'card-scores.json','application/json');
+$('#folder-button').onclick=()=>$('#folder-file').click();
+$('#multi-button').onclick=()=>$('#multi-file').click();
+$('#folder-file').addEventListener('change',e=>loadMany(e.target.files));
+$('#multi-file').addEventListener('change',e=>loadMany(e.target.files));
+async function loadMany(files){const list=[...files].filter(f=>/\.(json|png)$/i.test(f.name));if(!list.length)return;if(list.length===1){await load(list[0]);return;}announce(`Scoring ${list.length} cards…`);const recs=await scanFiles(list,{onProgress:(d,t)=>announce(`Scored ${d} / ${t}…`)});for(const r of recs)store.add(r);announce(`Scored ${recs.length} cards.`);showOverview();}
 $('#reanalyze-button').onclick=()=>{gateOpen=true;render();announce('Improvements unlocked.');}; $('#calm').onchange=(e)=>{document.documentElement.style.setProperty('--accent',e.target.checked?'#dfa04f':accent)};
+const bulkHandlers={onRowClick:id=>{store.setActive(id);store.setWorklist([id]);hydrate(store.get(id));showReview();render();},onToggle:id=>{store.toggleSelect(id);renderBulk();},onImprove:()=>{const ids=[...store.selectedIds()];if(!ids.length)return;store.setWorklist(ids);store.setActive(ids[0]);hydrate(store.get(ids[0]));showReview();render();}};
+$('#bulk-improve').onclick=()=>bulkHandlers.onImprove();
+$('#bulk-search').addEventListener('input',e=>{bulkState.query=e.target.value;renderBulk();});
+for(const b of $('#bulk-filters').children)b.onclick=()=>{for(const x of $('#bulk-filters').children)x.classList.toggle('active',x===b);const band=b.dataset.band;bulkState.bands=band==='all'?null:new Set(band==='ship'?['Good','Excellent']:band==='fixable'?['Mixed']:['Weak']);renderBulk();};
+for(const th of document.querySelectorAll('.bulk-table th[data-sort]'))th.onclick=()=>{const key=th.dataset.sort;bulkState.dir=(bulkState.sort===key&&bulkState.dir==='desc')?'asc':'desc';bulkState.sort=key;renderBulk();};
+$('#ctx-overview').onclick=()=>showOverview();
+$('#ctx-prev').onclick=()=>{saveActive();const r=store.prev();hydrate(r);showReview();render();};
+$('#ctx-next').onclick=()=>{saveActive();const r=store.next();hydrate(r);showReview();render();};
 for(const b of $('#model-controls').children)b.onclick=()=>{targetModel=b.dataset.model;localStorage.setItem('cq.model',targetModel);render()}; for(const b of $('#direction-controls').children)b.onclick=()=>{creatorDirection=b.dataset.direction;localStorage.setItem('cq.direction',creatorDirection);render()};
 async function load(input){try{const {text:t,sourcePng:png}=await readCardFile(input);const rec=store.add(buildRecord({fileName:input.name,text:t,sourcePng:png}));store.setActive(rec.id);store.setWorklist([rec.id]);hydrate(rec);if(png){const image=$('#card-art');image.src=URL.createObjectURL(new Blob([png.bytes],{type:'image/png'}));image.onload=()=>{const colors=accentFromImage(image);accent=colors.accent;if(!$('#calm').checked)document.documentElement.style.setProperty('--accent',colors.accent);document.documentElement.style.setProperty('--bright',colors.bright)};image.hidden=false;$('#art-placeholder').hidden=true}else{$('#card-art').hidden=true;$('#art-placeholder').hidden=false}showReview();afterAnalyze()}catch(e){showError(e)}}
 function analyze(){try{result=scoreCard(text);applied=[];gateOpen=false;ledger=[`${result.total} · loaded`];afterAnalyze()}catch(e){showError(e)}}
 function afterAnalyze(){empty.hidden=true;review.hidden=false;$('#gate').hidden=false;setJourney('review');render();announce(`Scored ${result.total}.`);saveActive()}
-function showReview(){}  // replaced in Task 6
+function showReview(){
+  $('#bulk').hidden=true;empty.hidden=true;review.hidden=false;$('#gate').hidden=false;setJourney('review');
+  const {index,total}=store.worklistPos();
+  const bulkSession=store.all().length>1;
+  $('#review-context').hidden=!bulkSession;
+  $('#ctx-pos').textContent=total>1?`Card ${index+1} of ${total}`:'';
+  $('#ctx-prev').hidden=total<=1;
+  $('#ctx-next').hidden=total<=1;
+}
+function showOverview(){saveActive();$('#review').hidden=true;empty.hidden=true;$('#bulk').hidden=false;renderBulk();}
+function renderBulk(){renderOverview(store,{summary:$('#bulk-summary'),tbody:$('#bulk-tbody'),count:$('#bulk-improve')},bulkState,bulkHandlers);}
 function setJourney(where){for(const j of document.querySelectorAll('.journey'))j.classList.toggle('active',j.dataset.jump===where)}
 for(const b of document.querySelectorAll('.journey'))b.onclick=()=>{if(b.dataset.jump==='load'){file.click();return}const t=b.dataset.jump==='export'?$('#export'):$('#review');if(t&&!t.hidden){setJourney(b.dataset.jump);t.scrollIntoView({block:'start'})}};
 function spyJourney(){if(review.hidden)return;const exp=$('#export');const mid=window.scrollY+window.innerHeight/2;const atBottom=window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-4;setJourney(exp&&(atBottom||exp.offsetTop<=mid)?'export':'review')}

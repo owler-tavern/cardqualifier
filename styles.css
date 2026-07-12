@@ -604,3 +604,5 @@ dialog input,dialog select {
 .bulk-table td.name{cursor:pointer;text-decoration:underline dotted}
 .bulk-table tr.unreadable{opacity:.55}
 .dot{display:inline-block;width:.6rem;height:.6rem;border-radius:50%;margin-right:.4rem}
+.review-context{display:flex;gap:.75rem;align-items:center;padding:.5rem 1rem;background:#0001;border-radius:8px;margin-bottom:1rem}
+.review-context .link{margin-right:auto}
