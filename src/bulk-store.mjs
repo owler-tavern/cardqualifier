@@ -21,6 +21,9 @@ export function createBulkStore() {
     return stored;
   }
   function get(id) { return byId.get(id) ?? null; }
+  // Start a fresh session — every single-card load or new batch resets state so
+  // the v1 single-card experience never inherits a stale bulk worklist.
+  function reset() { records.length = 0; byId.clear(); selection.clear(); activeId = null; worklist = []; }
   function replace(id, rec) {
     const idx = records.findIndex((r) => r.id === id);
     if (idx === -1) return null;
@@ -53,13 +56,15 @@ export function createBulkStore() {
   }
   function view({ sort = "score", dir = "desc", bands = null, query = "" } = {}) {
     let rows = records.slice();
-    if (bands && bands.size) rows = rows.filter((r) => r.result && bands.has(r.result.band));
+    // Unreadable records (no result) bucket as "weak" in summary(), so the Weak
+    // filter must include them too or the counts won't reconcile.
+    if (bands && bands.size) rows = rows.filter((r) => (r.result ? bands.has(r.result.band) : bands.has("Weak")));
     if (query) { const q = query.toLowerCase(); rows = rows.filter((r) => (r.name || r.fileName).toLowerCase().includes(q)); }
     const key = sort === "name" ? (r) => (r.name || r.fileName).toLowerCase() : (r) => (r.result ? r.result.total : -1);
     rows.sort((a, b) => { const ka = key(a), kb = key(b); if (ka < kb) return dir === "asc" ? -1 : 1; if (ka > kb) return dir === "asc" ? 1 : -1; return 0; });
     return rows;
   }
 
-  return { add, get, replace, all, setActive, active, setWorklist, worklistPos, next, prev,
+  return { add, get, reset, replace, all, setActive, active, setWorklist, worklistPos, next, prev,
     toggleSelect, clearSelection, selectedIds, selected, summary, view };
 }

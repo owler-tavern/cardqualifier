@@ -27,6 +27,24 @@ test("toCsv quotes values containing commas, quotes, or newlines", () => {
   assert.match(lines[1], /^"He said ""hi"", loudly",a\.json,61,Mixed,Add example dialogues,no$/);
 });
 
+test("toCsv neutralizes spreadsheet formula injection in untrusted names", () => {
+  const csv = toCsv([rec({ name: "=HYPERLINK(1)" })]);
+  const line = csv.split("\n")[1];
+  // Leading '=' is prefixed with an apostrophe so Excel treats it as text.
+  assert.match(line, /^'=HYPERLINK\(1\),/);
+});
+
+test("toCsv guards a leading + that also needs comma-quoting", () => {
+  const csv = toCsv([rec({ name: "+1, really" })]);
+  const line = csv.split("\n")[1];
+  assert.match(line, /^"'\+1, really",/);
+});
+
+test("toJson leaves values unescaped (no CSV apostrophe guard)", () => {
+  const parsed = JSON.parse(toJson([rec({ name: "=raw" })]));
+  assert.equal(parsed[0].name, "=raw");
+});
+
 test("toJson is valid JSON of the rows", () => {
   const parsed = JSON.parse(toJson([rec()]));
   assert.equal(parsed[0].score, 61);

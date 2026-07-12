@@ -42,6 +42,22 @@ test("view sorts by score desc by default and filters by band + query", () => {
   assert.deepEqual(search, ["Alpha"]);
 });
 
+test("the Weak filter includes unreadable records, matching the summary bucket", () => {
+  const s = createBulkStore();
+  s.add(rec("Good", 90, "Excellent"));
+  s.add(rec("Bad", 30, "Weak"));
+  s.add({ fileName: "broken.png", name: "broken.png", text: null, sourcePng: null,
+    result: null, error: "not a card", applied: [], ledger: [], previous: null, gateOpen: false, edited: false });
+  // summary counts the unreadable card as weak...
+  assert.equal(s.summary().buckets.weak, 2);
+  // ...so the Weak filter must surface it too.
+  const weak = s.view({ bands: new Set(["Weak"]) }).map((r) => r.name);
+  assert.deepEqual(weak.sort(), ["Bad", "broken.png"]);
+  // other band filters still exclude unreadable rows.
+  const ship = s.view({ bands: new Set(["Good", "Excellent"]) }).map((r) => r.name);
+  assert.deepEqual(ship, ["Good"]);
+});
+
 test("worklist next/prev walk the list and stop at the ends", () => {
   const s = createBulkStore();
   const a = s.add(rec("A", 90, "Excellent"));
@@ -63,6 +79,24 @@ test("selection toggles and unreadable records are excluded from select", () => 
   assert.deepEqual([...s.selectedIds()], [a.id]);
   s.toggleSelect(a.id);
   assert.equal(s.selectedIds().size, 0);
+});
+
+test("reset clears records, selection, active, and worklist for a fresh session", () => {
+  const s = createBulkStore();
+  const a = s.add(rec("A", 90, "Excellent"));
+  s.add(rec("B", 40, "Weak"));
+  s.setWorklist([a.id]);
+  s.setActive(a.id);
+  s.toggleSelect(a.id);
+  s.reset();
+  assert.equal(s.all().length, 0);
+  assert.equal(s.active(), null);
+  assert.equal(s.selectedIds().size, 0);
+  assert.equal(s.worklistPos().total, 0);
+  // a single fresh card is a non-bulk session again
+  const c = s.add(rec("C", 70, "Good"));
+  assert.equal(s.all().length, 1);
+  assert.equal(s.get(c.id).name, "C");
 });
 
 test("replace swaps a record in place, preserving id and order", () => {

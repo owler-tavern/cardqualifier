@@ -18,7 +18,10 @@ export function reportRows(records) {
 }
 
 function esc(value) {
-  const s = String(value ?? "");
+  let s = String(value ?? "");
+  // Neutralize spreadsheet formula injection: card names/blockers come from
+  // untrusted cards, so a leading =/+/-/@ (or tab/CR) could execute in Excel.
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
