@@ -42,19 +42,26 @@ export function scoreCard(input) {
   });
 
   const suggestions = buildSuggestions(data, criteria, playability);
-  const reviewFindings = suggestions.map((item) => ({
-    id: `rubric.${item.field}.${slug(item.title)}`,
-    field: item.field,
-    source: item.evidence ? "playability" : "rubric",
-    severity: item.impact >= 85 ? "blocker" : "improvement",
-    summary: item.reason,
-    evidence: Array.isArray(item.evidence) ? item.evidence : [],
-    estimatedDelta: item.evidence ? 0 : Math.round(item.impact / 10),
-    fixTemplate: item.template || item.draft || null,
-  })).concat(styleFindings);
+  const reviewFindings = suggestions.map((item) => {
+    // token_efficiency advises a structural lorebook restructure the single-field apply
+    // model can't express (no draft, no reviewer support). Surface it as advice-only so it
+    // never renders as an actionable card that promises leverage it can't deliver.
+    const advisory = item.field === "token_efficiency";
+    return {
+      id: `rubric.${item.field}.${slug(item.title)}`,
+      field: item.field,
+      source: item.evidence ? "playability" : "rubric",
+      severity: advisory ? "advisory" : item.impact >= 85 ? "blocker" : "improvement",
+      summary: item.reason,
+      evidence: Array.isArray(item.evidence) ? item.evidence : [],
+      estimatedDelta: advisory || item.evidence ? 0 : Math.round(item.impact / 10),
+      fixTemplate: item.template || item.draft || null,
+    };
+  }).concat(styleFindings);
 
   return {
     total,
+    name: text(data.name),
     band: bandForScore(total),
     summary: summaryForScore(total),
     format: card.format,
