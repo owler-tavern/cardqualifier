@@ -61,10 +61,17 @@ up.
 
 | Sub-signal | Pts | Measurement | Source |
 |---|---|---|---|
-| Causal grounding | 5 | Grounded cause→behavior→consequence chains in one passage. 0 → 0, one → 3, two+ → 5. | reuse `playability.links` |
+| Coherent motivation | 5 | An explicit cause→behavior→consequence chain in one passage **OR** distributed reinforcement: a salient motivation/theme that recurs across ≥2 fields and is shown in behavior. 0 → 0, one path present → 3, strong/both → 5. | reuse `playability.links` + trait-overlap machinery |
 | Tension / contradiction | 5 | Distinct explicit-contrast statements across description + personality ("warm *but* guarded"). 0 → 0, one → 3, two+ → 5. | reuse/strengthen `playability.tensions` |
 | Agency outside `{{user}}` | 4 | Action beats with a third-person subject (she/he/they/proper noun + action verb) that do **not** reference `{{user}}`/"you". ≥2 → 4, one → 2, none → 0. Capped low because it is the least reliable heuristic. | NEW detector |
 | Trait shown under pressure | 2 | At least one stated personality trait is demonstrated (word overlap) in examples or greeting, not merely asserted. | partial reuse |
+
+**Why "Coherent motivation" and not "explicit causal chain":** widely-shared card-writing craft
+(izumikonataa's "Organic Method") holds that the best cards *deliberately do not spell out* the
+causal logic — they scatter clues across fields and force the model to deduce the persona
+("show, don't tell"). Scoring only explicit `because X so Y` chains would reward spoon-fed cards
+and penalize the deliberately-decentralized ideal. Crediting distributed reinforcement as an
+equal path keeps the signal format-agnostic.
 
 The agency detector is a rough heuristic and is intentionally capped at 4/100 so noise has low
 blast radius. It must not fire on pure scenery ("the lights dimmed"); it requires an animate
@@ -84,6 +91,12 @@ and a card can max the axis either way:
 
 Effect: a card that follows Creator 1's hack (skip examples, use succinct speaking rules) is no
 longer penalized for thin `mes_example`.
+
+**Deliberate neutrality on an expert disagreement.** Creator 1 says ignore example dialogue;
+izumikonataa says garbage examples waste a good prompt and examples are essential ("water
+temperature"). These are opposite schools. The `max(examples, speaking_rules)` design refuses to
+take a side — a card can max Voice either way — and the both-present bonus rewards doing both
+well without punishing either choice.
 
 ### Metadata (9 pts)
 
@@ -125,6 +138,8 @@ Add:
   on Voice by an examples-only card of comparable voice quality.
 - Agency detector fires on ≥2 independent third-person action beats and does **not** fire on
   pure scenery.
+- A distributed-clue card (motivation shown across fields, no explicit "because…so") still earns
+  Coherent-motivation credit, on par with an explicit-chain card.
 - Tension sub-signal counts distinct contrasts, not repeats.
 - Full-rubric total still sums to 100 at the ceiling.
 
