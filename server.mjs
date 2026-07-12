@@ -173,7 +173,10 @@ async function serveStatic(pathname, response, headOnly) {
     return sendJson(response, 404, { error: "Not found" });
   }
 
-  response.writeHead(200, { "Content-Type": mimeTypes.get(extname(filePath)) ?? "application/octet-stream" });
+  response.writeHead(200, {
+    "Content-Type": mimeTypes.get(extname(filePath)) ?? "application/octet-stream",
+    "Cache-Control": "no-cache",
+  });
   if (headOnly) return response.end();
   createReadStream(filePath).pipe(response);
 }
