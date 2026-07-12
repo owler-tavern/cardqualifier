@@ -56,15 +56,77 @@ export function analyzePlayability(data = {}) {
     });
   }
 
+  const agencyBeats = countAgencyBeats(data);
+  const motivationSpread = countMotivationSpread(data);
+  const traitShown = traitDemonstrated(data);
+
   const signalCount = links.length + tensions.length + greetingCoverage.matchedAnchors.length;
   return {
     band: signalCount >= 3 ? "strong" : signalCount ? "developing" : "thin",
     links,
     tensions,
     greetingCoverage,
+    agencyBeats,
+    motivationSpread,
+    traitShown,
     findings,
     suggestions,
   };
+}
+
+// Independent action beats: an animate third-person subject doing something, not
+// pointed at {{user}}. Requiring an animate subject naturally excludes pure scenery
+// ("the lights dimmed", "music is playing") while catching "Jenna and Emma are dancing".
+const ACTION_VERB = /\b(walk|talk|danc|sip|drink|text|shak|tap|laugh|smil|glanc|wander|argu|whisper|lean|check|read|scroll|roll|watch|nurse|scan|type|pour|slide|lock|raise|cross|mutter|pace|flirt|tease|giggle|sway|stumble|chat|sit|stand|move|turn|reach|grab|kiss|hug|wave|nod)\w*/i;
+
+function countAgencyBeats(data) {
+  const beats = new Set();
+  for (const field of ["first_mes", "scenario", "description"]) {
+    for (const sentence of sentencesOf(data[field])) {
+      if (/\{\{user\}\}|\byou\b|\byour\b/i.test(sentence)) continue;
+      // Drop the first token so a sentence-initial capital ("The", "Music") is not mistaken
+      // for a proper-noun subject; a real named subject recurs or a pronoun is present.
+      const rest = sentence.replace(/^\s*\S+\s*/, "");
+      const hasSubject = /\b(she|he|they|her|him)\b/i.test(sentence) || /\b[A-Z][a-z]{2,}\b/.test(rest);
+      if (!hasSubject) continue;
+      const hasAction = ACTION_VERB.test(sentence) || /\b[a-z]+ing\b/.test(sentence) || /\b(she|he|they)\s+[a-z]+s\b/i.test(sentence);
+      if (hasAction) beats.add(sentence.toLowerCase());
+    }
+  }
+  return beats.size;
+}
+
+// Distributed reinforcement: a motivation/theme word that recurs across at least two of
+// the definition fields (description, personality, scenario). Rewards the "scatter clues
+// across fields" method instead of a spelled-out chain in one passage.
+function countMotivationSpread(data) {
+  const perField = ["description", "personality", "scenario"].map((field) => new Set(meaningfulWords(data[field], data.name)));
+  const counts = new Map();
+  for (const words of perField) {
+    for (const word of words) counts.set(word, (counts.get(word) ?? 0) + 1);
+  }
+  return [...counts.values()].filter((n) => n >= 2).length;
+}
+
+// A stated personality trait that is actually shown in behavior (greeting or examples),
+// not merely asserted.
+function traitDemonstrated(data) {
+  const traits = new Set(meaningfulWords(data.personality, data.name));
+  if (!traits.size) return false;
+  const shown = meaningfulWords(`${cleanText(data.first_mes)}\n${cleanText(data.mes_example)}`, data.name);
+  return shown.some((word) => traits.has(word));
+}
+
+function sentencesOf(value) {
+  const out = [];
+  if (typeof value !== "string") return out;
+  for (const line of value.split(/\r?\n/)) {
+    for (const sentence of line.trim().match(/[^.!?]+[.!?]?/g) ?? []) {
+      const trimmed = sentence.trim();
+      if (trimmed) out.push(trimmed);
+    }
+  }
+  return out;
 }
 
 function causalDraft(data, evidence) {
