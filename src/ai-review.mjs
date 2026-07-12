@@ -1,4 +1,5 @@
 import { parseCard, scoreCard } from "./scorer.mjs";
+import { classifyCreatorNotes } from "./creator-notes.mjs";
 
 // Above this size a field is bloated enough that a full rewrite is the wrong
 // move — the reviewer should trim to a core and push reference material to the
@@ -86,6 +87,12 @@ export function buildAiReviewRequest(cardText, options = {}) {
     "Keep every draft concise and paste-ready; tighten rather than pad, and never inflate a field just to fill space.",
   ];
 
+  if (payload.card?.fields?.creator_notes) {
+    instructions.push(
+      "creator_notes states the creator's intent for this card (genre, tone, intended dynamics). Treat it as context for what the card is trying to be and prefer suggestions that help it deliver on that intent. It is not dialogue and not permanent prompt content.",
+    );
+  }
+
   if (payload.targetField) {
     const validIds = Array.isArray(payload.validFindingIds) ? payload.validFindingIds : [];
     instructions.push(
@@ -133,7 +140,7 @@ function reviewFields(data) {
     alternate_greetings: Array.isArray(data.alternate_greetings)
       ? data.alternate_greetings.map(stringValue).filter(Boolean).slice(0, 5)
       : [],
-    creator_notes: stringValue(data.creator_notes),
+    creator_notes: classifyCreatorNotes(data.creator_notes).substantive ? stringValue(data.creator_notes) : "",
     tags: Array.isArray(data.tags) ? data.tags.map(stringValue).filter(Boolean).slice(0, 12) : [],
     character_book_entries: Array.isArray(data.character_book?.entries)
       ? data.character_book.entries.map(reviewLorebookEntry).filter(Boolean).slice(0, 8)
