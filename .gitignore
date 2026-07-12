@@ -2,7 +2,12 @@
 .superpowers/
 .impeccable/
 .codex/
+.claude/
+.agents/
 tasks/
+
+# Local sample / input cards (personal material, not app code)
+Sample Card/
 
 # Node
 node_modules/
