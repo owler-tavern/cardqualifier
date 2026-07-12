@@ -43,3 +43,13 @@ test("substance mixed with a promo link still counts as substantive", () => {
     true,
   );
 });
+
+test("non-Latin-script prose is substantive, not stripped to nothing", () => {
+  for (const v of [
+    "ダークミステリー、短めに返答", // "dark mystery, reply briefly" (Japanese)
+    "Тёмная мистика, отвечает кратко", // "dark mystery, answers briefly" (Russian)
+    "음침한 미스터리, 짧게 대답", // "gloomy mystery, short replies" (Korean)
+  ]) {
+    assert.equal(classifyCreatorNotes(v).substantive, true, v);
+  }
+});

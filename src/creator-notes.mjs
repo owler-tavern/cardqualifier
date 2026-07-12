@@ -33,7 +33,9 @@ export function classifyCreatorNotes(text) {
 
   let residue = raw;
   for (const re of JUNK_RE) residue = residue.replace(re, " ");
-  const words = residue.replace(/[^a-z0-9\s]/gi, " ").split(/\s+/).filter(Boolean);
+  // \p{L}\p{N} keeps letters/numbers from every script (CJK, Cyrillic, etc.)
+  // so non-Latin creator notes are not stripped to nothing.
+  const words = residue.replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
 
   // Lean-substance: any real prose beyond a stray word survives the gate.
   if (words.length >= 2) return { substantive: true, reason: "meaningful prose remains" };
