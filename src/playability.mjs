@@ -21,11 +21,16 @@ export function analyzePlayability(data = {}) {
       detail: "The card does not yet connect a cause, behavior, and consequence in one local passage.",
       evidence,
     });
+    // Only fabricate a paste-ready chain when the evidence is about this character. If the
+    // sentence's subject is a different named person (e.g. an ensemble card whose name is a
+    // scene, not a person), a synthesized "Because X…, {{char}} does Y" reads as nonsense —
+    // leave it blank and let the reviewer draft it.
+    const draft = hasForeignSubject(draftEvidence, data.name) ? undefined : causalDraft(data, draftEvidence);
     suggestions.push({
       field: "description",
       title: "Connect a cause to a visible behavior",
       reason: "A local cause-behavior-consequence chain gives roleplay a stable reason for what the character does.",
-      draft: causalDraft(data, draftEvidence),
+      draft,
       evidence,
     });
   }
@@ -136,6 +141,21 @@ function stripInline(value) {
     .replace(/[*_`]+/g, "")
     .replace(/^\s*[>#\-]+\s*/, "")
     .trim();
+}
+
+// Words that can lead a sentence with a capital letter without being a named subject.
+const NON_SUBJECT_LEAD = new Set(["the", "a", "an", "she", "he", "they", "her", "his", "their", "it", "its", "this", "that", "these", "those", "when", "after", "before", "because", "nearby", "meanwhile", "one", "on", "in", "at", "as", "from", "with", "each", "every", "some", "many", "most", "no", "there", "here", "and", "but", "so", "yet"]);
+
+// True when the sentence opens with a named subject (a capitalized word that is a real
+// name, not a pronoun/article) that is not part of this card's character name.
+function hasForeignSubject(evidence, name) {
+  const anchor = stripInline(evidence);
+  const lead = anchor.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/);
+  if (!lead) return false;
+  const leadWords = lead[1].toLowerCase().split(/\s+/);
+  if (leadWords.every((word) => NON_SUBJECT_LEAD.has(word))) return false;
+  const nameWords = new Set(cleanText(name).toLowerCase().match(/[a-z]+/g) ?? []);
+  return leadWords.some((word) => !NON_SUBJECT_LEAD.has(word) && !nameWords.has(word));
 }
 
 function causalDraft(data, evidence) {

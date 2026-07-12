@@ -58,6 +58,35 @@ test("a causal draft carries no raw markdown and is not built from a {{user}} se
   assert.doesNotMatch(draft, /Because\s+\{\{user\}\}/i, "the draft is not built from a {{user}}-subject sentence");
 });
 
+test("a causal draft is withheld when the evidence subject is a different named person", () => {
+  // Ensemble/scene card: the name is a scene, and the strongest evidence sentence is about
+  // Elle Fanning (a different named person), which is exactly the real Hollywood card shape.
+  const ensemble = analyzePlayability({
+    name: "Hollywood Gala Afterparty",
+    description: "Elle Fanning is ordering a drink at the crowded bar and swaying on her feet, clearly a little drunk already.",
+    personality: "",
+    scenario: "A party.",
+    first_mes: "Music plays.",
+    mes_example: "",
+  });
+  const ensembleSuggestion = ensemble.suggestions.find((s) => s.title === "Connect a cause to a visible behavior");
+  assert.ok(ensembleSuggestion, "the causal finding still appears");
+  assert.equal(ensembleSuggestion.draft, undefined, "no fabricated draft about a foreign subject");
+
+  // A normal single-character card still gets a deterministic draft.
+  const solo = analyzePlayability({
+    name: "Mara Venn",
+    description: "Mara guards the last archive of a drowned city and never lets a stranger past the door.",
+    personality: "",
+    scenario: "A shuttered station at midnight.",
+    first_mes: "Hello.",
+    mes_example: "",
+  });
+  const soloSuggestion = solo.suggestions.find((s) => s.title === "Connect a cause to a visible behavior");
+  assert.ok(soloSuggestion?.draft, "single-character card still gets a draft");
+  assert.doesNotMatch(soloSuggestion.draft, /[*_`]/, "and it is clean");
+});
+
 test("the static server decodes URL-encoded paths", async () => {
   const server = createAppServer();
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
