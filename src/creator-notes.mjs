@@ -1,16 +1,26 @@
-// Words that signal a creator is stating intent (genre, tone, behaviour, or
-// model/content guidance). Matched on word boundaries to avoid substring hits.
-const INTENT_WORDS = [
-  "genre", "tone", "setting", "mood", "theme", "vibe", "atmosphere",
+// Strong intent signals — unambiguous statements of genre, tone, behaviour, or
+// model/content guidance. Any one of these on its own marks the note as the
+// creator stating intent (matched on word boundaries to avoid substring hits).
+const STRONG_WORDS = [
+  "genre", "tone", "setting", "mood", "theme", "atmosphere",
   "romance", "horror", "mystery", "comedy", "drama", "fantasy", "sci-fi",
-  "scifi", "slice of life", "dark", "wholesome", "angst", "slow-burn",
+  "scifi", "slice of life", "wholesome", "angst", "slow-burn",
   "personality", "behavior", "behaviour", "responds", "reply", "replies",
-  "roleplay", "dynamic", "relationship", "backstory", "lore", "scenario",
-  "plays", "acts", "speaks", "voice", "persona", "greeting",
-  "nsfw", "sfw", "content warning", "trigger", "model", "preset",
-  "temperature", "context", "jailbreak", "system prompt",
+  "roleplay", "backstory", "lore", "scenario",
+  "plays", "acts", "speaks", "persona", "greeting",
+  "nsfw", "sfw", "content warning", "jailbreak", "system prompt",
+  "preset", "temperature",
 ];
-const INTENT_RE = new RegExp("\\b(" + INTENT_WORDS.join("|") + ")\\b", "i");
+const STRONG_RE = new RegExp("\\b(" + STRONG_WORDS.join("|") + ")\\b", "i");
+
+// Weak signals — words that often accompany intent but are far too common to be
+// evidence on their own ("check out my dark stuff"). They neither short-circuit
+// nor count toward substance; a note that also carries real prose still passes
+// on that prose, but a note whose only signal is a weak word does not.
+const WEAK_WORDS = new Set([
+  "dark", "context", "model", "voice", "trigger", "dynamic",
+  "relationship", "vibe", "content",
+]);
 
 // Material that carries no character intent: links, handles, promo platforms,
 // filler, and changelog/credit lines. Stripped before measuring what remains.
@@ -29,15 +39,17 @@ export function classifyCreatorNotes(text) {
   const raw = text.trim();
   if (!raw) return { substantive: false, reason: "empty" };
 
-  if (INTENT_RE.test(raw)) return { substantive: true, reason: "states intent" };
+  if (STRONG_RE.test(raw)) return { substantive: true, reason: "states intent" };
 
   let residue = raw;
   for (const re of JUNK_RE) residue = residue.replace(re, " ");
   // \p{L}\p{N} keeps letters/numbers from every script (CJK, Cyrillic, etc.)
   // so non-Latin creator notes are not stripped to nothing.
   const words = residue.replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+  const content = words.filter((w) => !WEAK_WORDS.has(w.toLowerCase()));
 
-  // Lean-substance: any real prose beyond a stray word survives the gate.
-  if (words.length >= 2) return { substantive: true, reason: "meaningful prose remains" };
+  // Lean-substance: two or more real words survive the gate. A note whose only
+  // signal is a weak word no longer sneaks through as stated intent.
+  if (content.length >= 2) return { substantive: true, reason: "meaningful prose remains" };
   return { substantive: false, reason: "link/handle/boilerplate only" };
 }

@@ -53,3 +53,13 @@ test("non-Latin-script prose is substantive, not stripped to nothing", () => {
     assert.equal(classifyCreatorNotes(v).substantive, true, v);
   }
 });
+
+test("a lone weak intent word is not substantive; strong words and real prose are", () => {
+  // Weak words no longer short-circuit and do not count as substance on their own.
+  assert.equal(classifyCreatorNotes("dark").substantive, false);
+  assert.equal(classifyCreatorNotes("context").substantive, false);
+  // A strong intent word still marks stated intent.
+  assert.equal(classifyCreatorNotes("Horror.").substantive, true);
+  // A weak word alongside real description still passes on the prose.
+  assert.equal(classifyCreatorNotes("A dark, guarded courier who trusts no one.").substantive, true);
+});
