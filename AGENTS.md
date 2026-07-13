@@ -56,7 +56,8 @@ a test in the same commit.
 - `src/` — scoring, review, and bulk-evaluation modules.
 - `test/` — `node --test` suites + `test/fixtures`.
 - `docs/superpowers/{specs,plans}` — design specs and implementation plans
-  (tracked; this is the shared source of truth for what to build next).
+  (local only — gitignored so the public repo stays clean; still the shared
+  source of truth for agents working in this checkout).
 - `tasks/` — local scratch only (gitignored); not shared between agents.
 - `server.mjs`, `index.html`, `styles.css` — the local app.
 

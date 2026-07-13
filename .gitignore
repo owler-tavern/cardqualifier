@@ -10,6 +10,9 @@ tasks/
 # Local sample / input cards (personal material, not app code)
 Sample Card/
 
+# Design specs & implementation plans — kept local, out of the public repo
+docs/superpowers/
+
 # Node
 node_modules/
 npm-debug.log*
