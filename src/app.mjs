@@ -12,7 +12,7 @@ import { toCsv, toJson } from "./score-report.mjs";
 const $ = (s) => document.querySelector(s); const file = $('#card-file'), review = $('#review'), empty = $('#empty-state');
 let text = '', sourcePng = null, result = null, applied = [], gateOpen = false, previous = null, ledger = [], targetModel = localStorage.getItem('cq.model') || 'any', creatorDirection = localStorage.getItem('cq.direction') || 'true', accent = '#dfa04f';
 const store = createBulkStore();
-const bulkState={sort:'score',dir:'desc',bands:null,query:''};
+const bulkState={sort:'score',dir:'desc',bands:null,query:'',view:'list'};
 let lastArtUrl=null;
 // Paint the active card's portrait/accent from the live sourcePng. Called on
 // every entry into review so navigation (row-click, Prev/Next) refreshes art.
@@ -36,6 +36,7 @@ const bulkHandlers={onRowClick:id=>{store.setActive(id);store.setWorklist([id]);
 $('#bulk-improve').onclick=()=>bulkHandlers.onImprove();
 $('#bulk-search').addEventListener('input',e=>{bulkState.query=e.target.value;renderBulk();});
 for(const b of $('#bulk-filters').children)b.onclick=()=>{for(const x of $('#bulk-filters').children)x.classList.toggle('active',x===b);const band=b.dataset.band;bulkState.bands=band==='all'?null:new Set(band==='ship'?['Good','Excellent']:band==='fixable'?['Mixed']:['Weak']);renderBulk();};
+for(const b of $('#bulk-view-toggle').children)b.onclick=()=>{for(const x of $('#bulk-view-toggle').children)x.classList.toggle('active',x===b);bulkState.view=b.dataset.view;renderBulk();};
 for(const th of document.querySelectorAll('.bulk-table th[data-sort]'))th.onclick=()=>{const key=th.dataset.sort;bulkState.dir=(bulkState.sort===key&&bulkState.dir==='desc')?'asc':'desc';bulkState.sort=key;renderBulk();};
 $('#ctx-overview').onclick=()=>showOverview();
 $('#ctx-prev').onclick=()=>{saveActive();const r=store.prev();hydrate(r);showReview();render();};
@@ -54,7 +55,7 @@ function showReview(){
   $('#ctx-next').hidden=total<=1;
 }
 function showOverview(){saveActive();$('#review').hidden=true;empty.hidden=true;$('#bulk').hidden=false;renderBulk();}
-function renderBulk(){renderOverview(store,{summary:$('#bulk-summary'),tbody:$('#bulk-tbody'),count:$('#bulk-improve')},bulkState,bulkHandlers);}
+function renderBulk(){renderOverview(store,{summary:$('#bulk-summary'),tbody:$('#bulk-tbody'),count:$('#bulk-improve'),grid:$('#bulk-grid'),tableWrap:$('.bulk-table-wrap')},bulkState,bulkHandlers);}
 function setJourney(where){for(const j of document.querySelectorAll('.journey'))j.classList.toggle('active',j.dataset.jump===where)}
 for(const b of document.querySelectorAll('.journey'))b.onclick=()=>{if(b.dataset.jump==='load'){file.click();return}const t=b.dataset.jump==='export'?$('#export'):$('#review');if(t&&!t.hidden){setJourney(b.dataset.jump);t.scrollIntoView({block:'start'})}};
 function spyJourney(){if(review.hidden)return;const exp=$('#export');const mid=window.scrollY+window.innerHeight/2;const atBottom=window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-4;setJourney(exp&&(atBottom||exp.offsetTop<=mid)?'export':'review')}

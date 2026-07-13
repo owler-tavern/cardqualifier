@@ -65,11 +65,39 @@ function renderList(rows, els, selected, handlers) {
   }));
 }
 
+function renderGallery(rows, els, selected, handlers) {
+  els.grid.replaceChildren(...rows.map((r) => {
+    const tile = document.createElement("div");
+    tile.className = r.error ? "tile unreadable" : "tile";
+    const band = r.result ? r.result.band : "unreadable";
+    const check = r.error ? "" : `<input type="checkbox" ${selected.has(r.id) ? "checked" : ""}>`;
+    const stampScore = r.error || !r.result ? "—" : r.result.total;
+    const bandLabel = r.error ? "Unreadable" : band;
+    const weak = r.error ? "" : weakChipsHtml(r.result);
+    tile.innerHTML =
+      `<div class="tile-top">` +
+        `<div class="stamp ${bucketClass(band)}"><b>${stampScore}</b><span>${escapeHtml(bandLabel)}</span></div>` +
+        `${check}` +
+      `</div>` +
+      `<div class="tile-name">${escapeHtml(r.name || r.fileName)}</div>` +
+      `<div class="tile-blocker">${escapeHtml(topBlocker(r))}</div>` +
+      `${weak}`;
+    const box = tile.querySelector("input");
+    if (box) box.onclick = (e) => { e.stopPropagation(); handlers.onToggle(r.id); };
+    if (!r.error) tile.querySelector(".tile-name").onclick = () => handlers.onRowClick(r.id);
+    return tile;
+  }));
+}
+
 export function renderOverview(store, els, state, handlers) {
   renderSummary(store, els.summary);
   const rows = store.view({ sort: state.sort, dir: state.dir, bands: state.bands, query: state.query });
   const selected = store.selectedIds();
-  renderList(rows, els, selected, handlers);
+  const gallery = state.view === "gallery";
+  els.tableWrap.hidden = gallery;
+  els.grid.hidden = !gallery;
+  if (gallery) renderGallery(rows, els, selected, handlers);
+  else renderList(rows, els, selected, handlers);
   els.count.textContent = `Improve ${selected.size} selected →`;
   els.count.disabled = selected.size === 0;
 }

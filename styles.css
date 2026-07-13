@@ -636,5 +636,20 @@ dialog input,dialog select {
 .chip .sev{width:6px;height:6px;border-radius:50%}
 .chip .sev.hi{background:var(--bad)}.chip .sev.mid{background:var(--warn)}
 .chip.more{color:var(--faint);border-style:dashed}
+.bulk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.tile:hover{border-color:#4a3f2e}
+.tile.unreadable{opacity:.5}
+.tile-top{display:flex;align-items:flex-start;justify-content:space-between}
+.tile .stamp{width:60px;height:60px;border-radius:11px;background:var(--inset);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tile .stamp b{font-family:'IBM Plex Mono',monospace;font-size:23px;font-weight:600;line-height:1}
+.tile .stamp span{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
+.tile .stamp.ship{border-color:#93cba43a}.tile .stamp.ship b{color:var(--good)}
+.tile .stamp.fixable{border-color:#e0a4633a}.tile .stamp.fixable b{color:var(--warn)}
+.tile .stamp.weak{border-color:#e2897d3a}.tile .stamp.weak b{color:var(--bad)}
+.tile input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.tile-name{font-family:Spectral,serif;font-size:17px;cursor:pointer}
+.tile-blocker{color:var(--muted);font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile .weak-areas{justify-content:flex-start;margin-top:auto}
 .review-context{display:flex;gap:.75rem;align-items:center;padding:.5rem 1rem;background:#0001;border-radius:8px;margin-bottom:1rem}
 .review-context .link{margin-right:auto}
