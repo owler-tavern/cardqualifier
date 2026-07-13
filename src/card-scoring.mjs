@@ -3,6 +3,7 @@ import { analyzeStyle } from "./style-checks.mjs";
 import { mergeFindings } from "./merge-findings.mjs";
 import { normalizeObject, parseCard } from "./card-format.mjs";
 import { buildSuggestions } from "./suggestions.mjs";
+import { classifyCreatorNotes } from "./creator-notes.mjs";
 import {
   clamp,
   collectStats,
@@ -220,7 +221,7 @@ function scoreMetadata(data, findings) {
   let points = 0;
   const tags = Array.isArray(data.tags) ? data.tags.filter(hasText) : [];
 
-  points += hasText(data.creator_notes) ? 2 : 0;
+  points += classifyCreatorNotes(data.creator_notes).substantive ? 2 : 0;
   points += hasText(data.creator) ? 1.5 : 0;
   points += hasText(data.character_version) ? 1 : 0;
   points += tags.length > 0 ? 2 : 0;
@@ -237,7 +238,7 @@ function scoreMetadata(data, findings) {
     });
   }
 
-  return criterion("Metadata hygiene", 9, points, "Creator notes, tags, versioning, and prompt override safety.");
+  return criterion("Metadata hygiene", 9, points, "Substantive creator notes, tags, versioning, and prompt override safety.");
 }
 
 function scoreLorebook(data, findings) {

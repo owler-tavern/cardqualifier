@@ -4,6 +4,7 @@
 .codex/
 .claude/
 .agents/
+.opencode/
 tasks/
 
 # Local sample / input cards (personal material, not app code)

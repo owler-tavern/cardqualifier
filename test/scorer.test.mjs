@@ -297,6 +297,22 @@ test("re-embedding a v3 card does not duplicate or drop the ccv3 chunk", () => {
   assert.equal(JSON.parse(extractCardJsonFromPng(out2)).data.name, "Twice");
 });
 
+test("metadata hygiene rewards substantive creator notes, not junk", () => {
+  const base = {
+    name: "Mara", description: "A retired courier from Leth who keeps coded maps.",
+    personality: "Warm but guarded.", scenario: "{{user}} meets Mara at a station.",
+    first_mes: "Hello.", mes_example: "<START>\n{{user}}: hi\n{{char}}: hey",
+    tags: ["mystery"],
+  };
+  const meta = (card) => scoreCard(JSON.stringify({ spec: "chara_card_v2", spec_version: "2.0", data: card }))
+    .criteria.find((c) => c.label === "Metadata hygiene").points;
+
+  const substantive = meta({ ...base, creator_notes: "Dark mystery; keep replies short." });
+  const junk = meta({ ...base, creator_notes: "Follow me @author on discord.gg/x" });
+
+  assert.equal(substantive - junk, 2); // the creator_notes bonus is gated on substance
+});
+
 function makePngWithChunks(pairs) {
   const signature = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
   const chunks = pairs.map(([keyword, value]) => {

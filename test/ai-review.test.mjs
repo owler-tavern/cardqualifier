@@ -324,3 +324,25 @@ test("chat completion review request uses json schema response format", () => {
   assert.equal(request.response_format.json_schema.strict, true);
   assert.equal(request.messages[0].role, "system");
 });
+
+test("junk creator_notes are stripped from the AI payload; intent instruction absent", () => {
+  const card = JSON.stringify({ spec: "chara_card_v2", spec_version: "2.0", data: {
+    name: "Mara", description: "A retired courier.", personality: "Guarded.",
+    scenario: "{{user}} meets Mara.", first_mes: "Hi.", mes_example: "",
+    creator_notes: "Follow me @author on discord.gg/x",
+  }});
+  const payload = buildAiReviewPayload(card);
+  assert.equal(payload.card.fields.creator_notes, "");
+  assert.doesNotMatch(buildAiReviewRequest(card).instructions, /creator's intent/i);
+});
+
+test("substantive creator_notes are kept and elevated to an intent instruction", () => {
+  const card = JSON.stringify({ spec: "chara_card_v2", spec_version: "2.0", data: {
+    name: "Mara", description: "A retired courier.", personality: "Guarded.",
+    scenario: "{{user}} meets Mara.", first_mes: "Hi.", mes_example: "",
+    creator_notes: "Dark slow-burn mystery; keep her replies terse.",
+  }});
+  const payload = buildAiReviewPayload(card);
+  assert.match(payload.card.fields.creator_notes, /slow-burn mystery/);
+  assert.match(buildAiReviewRequest(card).instructions, /creator's intent/i);
+});
