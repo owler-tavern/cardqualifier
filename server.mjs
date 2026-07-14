@@ -6,9 +6,15 @@ import { pathToFileURL } from "node:url";
 import { buildAiReviewRequest, buildChatCompletionReviewRequest, extractResponseText, parseAiReviewResponse } from "./src/ai-review.mjs";
 import { isAiConfigured, normalizeProviderConfig, parseModelList, providerHeaders, providerModelsUrl, providerUrl } from "./src/provider-config.mjs";
 
+import { buildImageQuery, normalizeBraveResults } from "./src/image-search.mjs";
+import { isBlockedUrl } from "./src/ssrf-guard.mjs";
+import { isSearchConfigured, normalizeSearchConfig } from "./src/image-search-config.mjs";
+
 const root = resolve(".");
 const port = Number(process.env.PORT || 4173);
 const envConfig = normalizeProviderConfig();
+
+const PROXY_MAX_BYTES = 8_000_000;
 
 const mimeTypes = new Map([
   [".html", "text/html; charset=utf-8"],
@@ -42,6 +48,14 @@ async function handleRequest(request, response) {
 
     if (request.method === "POST" && url.pathname === "/api/models") {
       return await handleModels(request, response);
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/image-search") {
+      return await handleImageSearch(request, response);
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/image-proxy") {
+      return await handleImageProxy(request, response);
     }
 
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -188,6 +202,41 @@ async function readBody(request, limit) {
     if (body.length > limit) throw new Error("Request body is too large.");
   }
   return body;
+}
+
+export async function handleImageSearch(request, response) {
+  const body = await readBody(request, 20_000);
+  const payload = JSON.parse(body || "{}");
+  const config = normalizeSearchConfig({ apiKey: payload.apiKey });
+  if (!isSearchConfigured(config)) return sendJson(response, 401, { error: "Brave Search API key required." });
+  const q = (typeof payload.query === "string" && payload.query.trim())
+    || buildImageQuery(payload.card ?? {}) || "character portrait";
+  const braveUrl = `https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(q)}&count=20&safesearch=strict`;
+  const upstream = await fetch(braveUrl, { headers: { "Accept": "application/json", "X-Subscription-Token": config.apiKey } });
+  if (!upstream.ok) return sendJson(response, 502, { error: "Brave search request failed." });
+  const json = await upstream.json();
+  return sendJson(response, 200, normalizeBraveResults(json));
+}
+
+export async function handleImageProxy(request, response) {
+  const body = await readBody(request, 20_000);
+  const payload = JSON.parse(body || "{}");
+  const target = String(payload.url ?? "");
+  if (!target) return sendJson(response, 400, { error: "url parameter required." });
+  if (isBlockedUrl(target)) return sendJson(response, 403, { error: "URL blocked." });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  let upstream;
+  try {
+    upstream = await fetch(target, { signal: controller.signal, redirect: "follow" });
+  } catch { clearTimeout(timer); return sendJson(response, 502, { error: "Could not fetch image." }); }
+  clearTimeout(timer);
+  const ct = upstream.headers.get("content-type") || "";
+  if (!upstream.ok || !ct.toLowerCase().startsWith("image/")) return sendJson(response, 415, { error: "Not an image." });
+  const buf = Buffer.from(await upstream.arrayBuffer());
+  if (buf.length > PROXY_MAX_BYTES) return sendJson(response, 413, { error: "Image too large." });
+  response.writeHead(200, { "Content-Type": ct, "Content-Length": buf.length });
+  response.end(buf);
 }
 
 function sendJson(response, status, payload) {

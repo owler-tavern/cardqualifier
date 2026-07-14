@@ -27,7 +27,7 @@ test("key is not restored when the remember flag is unset", () => {
   const key = fakeInput("");
   const box = fakeInput();
   const storage = fakeStorage({ "cq.api-key": "leftover" });
-  connectApiKeyPersistence(key, box, storage);
+  connectApiKeyPersistence([{ input: key, key: "cq.api-key" }], box, storage);
   assert.equal(box.checked, false);
   assert.equal(key.value, ""); // not restored — remember flag absent
 });
@@ -36,7 +36,7 @@ test("ticking remember stores the flag and the current key", () => {
   const key = fakeInput("sk-abc123");
   const box = fakeInput();
   const storage = fakeStorage();
-  connectApiKeyPersistence(key, box, storage);
+  connectApiKeyPersistence([{ input: key, key: "cq.api-key" }], box, storage);
   box.checked = true;
   box.fire("change");
   assert.equal(storage.getItem("cq.remember-key"), "1");
@@ -47,7 +47,7 @@ test("editing the key while remembered keeps the stored copy in sync", () => {
   const key = fakeInput("sk-old");
   const box = fakeInput();
   const storage = fakeStorage();
-  connectApiKeyPersistence(key, box, storage);
+  connectApiKeyPersistence([{ input: key, key: "cq.api-key" }], box, storage);
   box.checked = true;
   box.fire("change");
   key.value = "sk-new";
@@ -55,24 +55,58 @@ test("editing the key while remembered keeps the stored copy in sync", () => {
   assert.equal(storage.getItem("cq.api-key"), "sk-new");
 });
 
-test("un-ticking remember clears both the flag and the stored key", () => {
+test("un-ticking remember clears all tracked keys", () => {
   const key = fakeInput("sk-abc");
   const box = fakeInput();
-  const storage = fakeStorage({ "cq.remember-key": "1", "cq.api-key": "sk-abc" });
-  connectApiKeyPersistence(key, box, storage);
-  assert.equal(box.checked, true); // restored as ticked
-  assert.equal(key.value, "sk-abc"); // key restored
+  const storage = fakeStorage();
+  connectApiKeyPersistence([{ input: key, key: "cq.api-key" }], box, storage);
+  box.checked = true;
+  box.fire("change");
   box.checked = false;
   box.fire("change");
   assert.equal(storage.getItem("cq.remember-key"), null);
   assert.equal(storage.getItem("cq.api-key"), null);
 });
 
-test("a remembered key is restored on connect and the box is ticked", () => {
+test("restores remembered keys from storage on connect", () => {
   const key = fakeInput("");
   const box = fakeInput();
-  const storage = fakeStorage({ "cq.remember-key": "1", "cq.api-key": "sk-saved" });
-  connectApiKeyPersistence(key, box, storage);
+  const storage = fakeStorage({ "cq.remember-key": "1", "cq.api-key": "sk-restored" });
+  connectApiKeyPersistence([{ input: key, key: "cq.api-key" }], box, storage);
   assert.equal(box.checked, true);
-  assert.equal(key.value, "sk-saved");
+  assert.equal(key.value, "sk-restored");
+});
+
+test("ticking remember stores multiple tracked keys at once", () => {
+  const key1 = fakeInput("sk-one");
+  const key2 = fakeInput("bsk-two");
+  const box = fakeInput();
+  const storage = fakeStorage();
+  connectApiKeyPersistence([
+    { input: key1, key: "cq.api-key" },
+    { input: key2, key: "cq.brave-key" },
+  ], box, storage);
+  box.checked = true;
+  box.fire("change");
+  assert.equal(storage.getItem("cq.remember-key"), "1");
+  assert.equal(storage.getItem("cq.api-key"), "sk-one");
+  assert.equal(storage.getItem("cq.brave-key"), "bsk-two");
+});
+
+test("un-ticking remember clears all keys from all pairs", () => {
+  const key1 = fakeInput("sk-one");
+  const key2 = fakeInput("bsk-two");
+  const box = fakeInput();
+  const storage = fakeStorage();
+  connectApiKeyPersistence([
+    { input: key1, key: "cq.api-key" },
+    { input: key2, key: "cq.brave-key" },
+  ], box, storage);
+  box.checked = true;
+  box.fire("change");
+  box.checked = false;
+  box.fire("change");
+  assert.equal(storage.getItem("cq.remember-key"), null);
+  assert.equal(storage.getItem("cq.api-key"), null);
+  assert.equal(storage.getItem("cq.brave-key"), null);
 });
