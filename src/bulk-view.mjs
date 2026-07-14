@@ -100,4 +100,22 @@ export function renderOverview(store, els, state, handlers) {
   else renderList(rows, els, selected, handlers);
   els.count.textContent = `Improve ${selected.size} selected →`;
   els.count.disabled = selected.size === 0;
+  renderSelectAll(rows, selected, els, handlers);
+}
+
+// Tri-state "Select all" over the currently visible readable rows: checked when
+// every visible selectable row is selected, indeterminate when only some are.
+// Toggling selects all visible (when not already all) or deselects the visible
+// set, leaving any hidden selections untouched.
+function renderSelectAll(rows, selected, els, handlers) {
+  const box = els.selectAll;
+  if (!box) return;
+  const visible = rows.filter((r) => r.result).map((r) => r.id);
+  const selectedVisible = visible.filter((id) => selected.has(id));
+  const allSelected = visible.length > 0 && selectedVisible.length === visible.length;
+  box.disabled = visible.length === 0;
+  box.checked = allSelected;
+  box.indeterminate = selectedVisible.length > 0 && !allSelected;
+  if (els.selectAllLabel) els.selectAllLabel.textContent = allSelected ? "Select none" : "Select all";
+  box.onchange = () => handlers.onToggleAll(visible, !allSelected);
 }

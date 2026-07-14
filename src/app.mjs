@@ -32,7 +32,7 @@ $('#folder-file').addEventListener('change',e=>loadMany(e.target.files));
 $('#multi-file').addEventListener('change',e=>loadMany(e.target.files));
 async function loadMany(files){const list=[...files].filter(f=>/\.(json|png)$/i.test(f.name));if(!list.length)return;if(list.length===1){await load(list[0]);return;}announce(`Scoring ${list.length} cards…`);const recs=await scanFiles(list,{onProgress:(d,t)=>announce(`Scored ${d} / ${t}…`)});store.reset();for(const r of recs)store.add(r);announce(`Scored ${recs.length} cards.`);showOverview();}
 $('#reanalyze-button').onclick=()=>{gateOpen=true;render();announce('Improvements unlocked.');}; $('#calm').onchange=(e)=>{document.documentElement.style.setProperty('--accent',e.target.checked?'#dfa04f':accent)};
-const bulkHandlers={onRowClick:id=>{store.setActive(id);store.setWorklist([id]);hydrate(store.get(id));showReview();render();},onToggle:id=>{store.toggleSelect(id);renderBulk();},onImprove:()=>{const ids=[...store.selectedIds()];if(!ids.length)return;store.setWorklist(ids);store.setActive(ids[0]);hydrate(store.get(ids[0]));showReview();render();}};
+const bulkHandlers={onRowClick:id=>{store.setActive(id);store.setWorklist([id]);hydrate(store.get(id));showReview();render();},onToggle:id=>{store.toggleSelect(id);renderBulk();},onImprove:()=>{const ids=[...store.selectedIds()];if(!ids.length)return;store.setWorklist(ids);store.setActive(ids[0]);hydrate(store.get(ids[0]));showReview();render();},onToggleAll:(visible,select)=>{if(select){store.selectAll(visible);}else{const hidden=new Set([...store.selectedIds()].filter(id=>!visible.includes(id)));store.clearSelection();store.selectAll([...hidden]);}renderBulk();}};
 $('#bulk-improve').onclick=()=>bulkHandlers.onImprove();
 $('#bulk-search').addEventListener('input',e=>{bulkState.query=e.target.value;renderBulk();});
 for(const b of $('#bulk-filters').children)b.onclick=()=>{for(const x of $('#bulk-filters').children)x.classList.toggle('active',x===b);const band=b.dataset.band;bulkState.bands=band==='all'?null:new Set(band==='ship'?['Good','Excellent']:band==='fixable'?['Mixed']:['Weak']);renderBulk();};
@@ -55,7 +55,7 @@ function showReview(){
   $('#ctx-next').hidden=total<=1;
 }
 function showOverview(){saveActive();$('#review').hidden=true;empty.hidden=true;$('#bulk').hidden=false;renderBulk();}
-function renderBulk(){renderOverview(store,{summary:$('#bulk-summary'),tbody:$('#bulk-tbody'),count:$('#bulk-improve'),grid:$('#bulk-grid'),tableWrap:$('.bulk-table-wrap')},bulkState,bulkHandlers);}
+function renderBulk(){renderOverview(store,{summary:$('#bulk-summary'),tbody:$('#bulk-tbody'),count:$('#bulk-improve'),grid:$('#bulk-grid'),tableWrap:$('.bulk-table-wrap'),selectAll:$('#bulk-select-all'),selectAllLabel:$('#bulk-select-all-label')},bulkState,bulkHandlers);}
 function setJourney(where){for(const j of document.querySelectorAll('.journey'))j.classList.toggle('active',j.dataset.jump===where)}
 for(const b of document.querySelectorAll('.journey'))b.onclick=()=>{if(b.dataset.jump==='load'){file.click();return}const t=b.dataset.jump==='export'?$('#export'):$('#review');if(t&&!t.hidden){setJourney(b.dataset.jump);t.scrollIntoView({block:'start'})}};
 function spyJourney(){if(review.hidden)return;const exp=$('#export');const mid=window.scrollY+window.innerHeight/2;const atBottom=window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-4;setJourney(exp&&(atBottom||exp.offsetTop<=mid)?'export':'review')}

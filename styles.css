@@ -608,6 +608,8 @@ dialog input,dialog select {
 .dot.ship{background:var(--good)}.dot.fixable{background:var(--warn)}.dot.weak{background:var(--bad)}
 .bulk-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .bulk-toolbar .grow{flex:1}
+.bulk-toolbar .select-all{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.bulk-toolbar .select-all input{cursor:pointer}
 .bulk-toolbar input[type=search]{background:var(--inset);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:8px 12px;font:inherit;font-size:14px;min-width:180px}
 .bulk-toolbar input[type=search]::placeholder{color:var(--faint)}
 .bulk-table-wrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
