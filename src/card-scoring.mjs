@@ -4,6 +4,7 @@ import { mergeFindings } from "./merge-findings.mjs";
 import { normalizeObject, parseCard } from "./card-format.mjs";
 import { buildSuggestions } from "./suggestions.mjs";
 import { classifyCreatorNotes } from "./creator-notes.mjs";
+import { isDraftableField } from "./ai-review.mjs";
 import {
   clamp,
   collectStats,
@@ -44,10 +45,15 @@ export function scoreCard(input) {
 
   const suggestions = buildSuggestions(data, criteria, playability);
   const reviewFindings = suggestions.map((item) => {
-    // token_efficiency advises a structural lorebook restructure the single-field apply
-    // model can't express (no draft, no reviewer support). Surface it as advice-only so it
-    // never renders as an actionable card that promises leverage it can't deliver.
-    const advisory = item.field === "token_efficiency";
+    // An actionable card the user can't act on is worse than advice: if a
+    // finding's field can't be AI-drafted and carries no fix template, the
+    // single-field Apply/Draft flow has nothing to offer (e.g. metadata,
+    // token_efficiency — structural or tags/notes work). Route it to the
+    // advice-only "Polish notes" instead. Blockers stay blockers: their summary
+    // is a real hand-actionable instruction (e.g. cleanup: remove placeholder).
+    const template = item.template || item.draft || null;
+    const inert = !isDraftableField(item.field) && !template;
+    const advisory = inert && item.impact < 85;
     return {
       id: `rubric.${item.field}.${slug(item.title)}`,
       field: item.field,
@@ -56,7 +62,7 @@ export function scoreCard(input) {
       summary: item.reason,
       evidence: Array.isArray(item.evidence) ? item.evidence : [],
       estimatedDelta: advisory || item.evidence ? 0 : Math.round(item.impact / 10),
-      fixTemplate: item.template || item.draft || null,
+      fixTemplate: template,
     };
   }).concat(styleFindings);
 

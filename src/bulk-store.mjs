@@ -44,6 +44,12 @@ export function createBulkStore() {
     else if (byId.has(id) && get(id).result) selection.add(id); // unreadable records have no result
     return new Set(selection);
   }
+  function selectAll(ids) {
+    for (const id of ids) {
+      if (byId.has(id) && get(id).result) selection.add(id); // skip unreadable
+    }
+    return new Set(selection);
+  }
   function clearSelection() { selection.clear(); }
   function selectedIds() { return new Set(selection); }
   function selected() { return records.filter((r) => selection.has(r.id)); }
@@ -66,5 +72,5 @@ export function createBulkStore() {
   }
 
   return { add, get, reset, replace, all, setActive, active, setWorklist, worklistPos, next, prev,
-    toggleSelect, clearSelection, selectedIds, selected, summary, view };
+    toggleSelect, selectAll, clearSelection, selectedIds, selected, summary, view };
 }

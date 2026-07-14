@@ -81,6 +81,20 @@ test("selection toggles and unreadable records are excluded from select", () => 
   assert.equal(s.selectedIds().size, 0);
 });
 
+test("selectAll adds only readable ids and skips unreadable ones", () => {
+  const s = createBulkStore();
+  const a = s.add(rec("A", 90, "Excellent"));
+  const b = s.add(rec("B", 40, "Weak"));
+  const bad = s.add({ fileName: "bad.png", name: "bad.png", text: null, sourcePng: null,
+    result: null, error: "not a card", applied: [], ledger: [], previous: null, gateOpen: false, edited: false });
+  s.selectAll([a.id, b.id, bad.id]);
+  const sel = s.selectedIds();
+  assert.ok(sel.has(a.id) && sel.has(b.id));
+  assert.ok(!sel.has(bad.id), "unreadable records are not selectable");
+  s.clearSelection();
+  assert.equal(s.selectedIds().size, 0);
+});
+
 test("reset clears records, selection, active, and worklist for a fresh session", () => {
   const s = createBulkStore();
   const a = s.add(rec("A", 90, "Excellent"));

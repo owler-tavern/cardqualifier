@@ -313,6 +313,30 @@ test("metadata hygiene rewards substantive creator notes, not junk", () => {
   assert.equal(substantive - junk, 2); // the creator_notes bonus is gated on substance
 });
 
+test("metadata note surfaces as advice-only, never a dead actionable card", () => {
+  const data = {
+    name: "Mara Venn",
+    description: "Mara Venn is a retired courier from the brass city of Leth who memorizes routes through storms and keeps coded maps inside her cuffs. She refuses to abandon clients and once walked forty miles through a dust squall to deliver a sealed letter.",
+    personality: "Warm but guarded, generous but allergic to sentimentality. She jokes when frightened and hates unpaid debts. She trusts slowly and remembers every favor.",
+    scenario: "{{user}} meets Mara at a shuttered station while a dust storm traps both of them inside. Someone outside knocks in a pattern Mara recognizes from her courier days.",
+    first_mes: "*Mara lowers the lantern, eyes narrowing.* \"If you are here because of that knocking, answer quickly: did you hear three taps or four? It matters more than you know.\"",
+    mes_example: "<START>\n{{user}}: Why does the tapping matter?\n{{char}}: \"Three means shelter. Four means danger. And I have counted four twice tonight.\"",
+    creator_notes: "",
+    tags: [],
+  };
+  const result = scoreCard(JSON.stringify({ spec: "chara_card_v2", spec_version: "2.0", data }));
+  const meta = result.reviewFindings.find((f) => f.field === "metadata");
+  assert.ok(meta, "expected a metadata finding for a card with no notes/tags");
+  assert.equal(meta.severity, "advisory");
+  // Guard the general rule: no actionable finding is left un-actionable.
+  const draftable = new Set(["description", "personality", "scenario", "first_mes", "mes_example", "alternate_greetings", "character_book", "creator_notes"]);
+  for (const f of result.reviewFindings) {
+    if (f.severity === "improvement" || f.severity === "blocker") {
+      assert.ok(draftable.has(f.field) || f.fixTemplate, `actionable ${f.field} must be draftable or carry a template`);
+    }
+  }
+});
+
 function makePngWithChunks(pairs) {
   const signature = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
   const chunks = pairs.map(([keyword, value]) => {
