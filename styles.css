@@ -531,6 +531,32 @@ dialog input,dialog select {
   padding:8px
 }
 
+dialog label.remember-key {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  cursor:pointer;
+  font-size:14px
+}
+
+dialog .remember-key input[type=checkbox] {
+  width:16px;
+  height:16px;
+  padding:0;
+  border:0;
+  background:none;
+  border-radius:0;
+  accent-color:var(--accent);
+  flex:0 0 auto
+}
+
+dialog .remember-key small {
+  flex-basis:100%;
+  color:var(--faint);
+  font-size:12px
+}
+
 .close {
   justify-self:end;
   display:inline-grid;
