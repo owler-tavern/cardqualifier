@@ -5,28 +5,37 @@ const SETTINGS = [
 ];
 
 const REMEMBER_FLAG = "cq.remember-key";
-const API_KEY = "cq.api-key";
 
-// Opt-in persistence for the API key. Unlike provider/model/base-url (always
-// persisted, non-secret), the key is only stored when the user ticks "Remember
-// key on this device" — and it lands in plaintext localStorage, so it stays off
+// Opt-in persistence for API keys. Unlike provider/model/base-url (always
+// persisted, non-secret), keys are only stored when the user ticks "Remember
+// key on this device" — and they land in plaintext localStorage, so it stays off
 // by default. Storage is injectable so the logic is unit-testable without a DOM.
-export function connectApiKeyPersistence(keyInput, rememberBox, storage = localStorage) {
+export function connectApiKeyPersistence(pairs, rememberBox, storage = localStorage) {
   const remembered = storage.getItem(REMEMBER_FLAG) === "1";
   rememberBox.checked = remembered;
-  if (remembered) keyInput.value = storage.getItem(API_KEY) || "";
+  if (remembered) {
+    for (const { input, key } of pairs) {
+      input.value = storage.getItem(key) || "";
+    }
+  }
   rememberBox.addEventListener("change", () => {
     if (rememberBox.checked) {
       storage.setItem(REMEMBER_FLAG, "1");
-      storage.setItem(API_KEY, keyInput.value);
+      for (const { input, key } of pairs) {
+        storage.setItem(key, input.value);
+      }
     } else {
       storage.removeItem(REMEMBER_FLAG);
-      storage.removeItem(API_KEY);
+      for (const { input: _, key } of pairs) {
+        storage.removeItem(key);
+      }
     }
   });
-  keyInput.addEventListener("input", () => {
-    if (rememberBox.checked) storage.setItem(API_KEY, keyInput.value);
-  });
+  for (const { input, key } of pairs) {
+    input.addEventListener("input", () => {
+      if (rememberBox.checked) storage.setItem(key, input.value);
+    });
+  }
 }
 
 export function connectPersistedSettings(select, storage = localStorage) {
@@ -35,7 +44,10 @@ export function connectPersistedSettings(select, storage = localStorage) {
     input.value = storage.getItem(key) || fallback;
     input.addEventListener("input", () => storage.setItem(key, input.value));
   }
-  connectApiKeyPersistence(select("#ai-api-key"), select("#ai-remember"), storage);
+  connectApiKeyPersistence([
+    { input: select("#ai-api-key"), key: "cq.api-key" },
+    { input: select("#brave-api-key"), key: "cq.brave-key" },
+  ], select("#ai-remember"), storage);
 }
 
 export function readAiSettings(select) {
