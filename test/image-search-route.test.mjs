@@ -22,11 +22,13 @@ test("image-search returns normalized results from Brave", async () => {
   await withStubbedFetch(async (url, opts) => {
     assert.match(String(url), /res\/v1\/images\/search/);
     assert.match(String(url), /safesearch=strict/);
+    // The caller's query must actually reach Brave — not a hardcoded default.
+    assert.equal(new URL(String(url)).searchParams.get("q"), "Mara Venn mystery");
     assert.equal(opts.headers["X-Subscription-Token"], "test-key");
     return { ok: true, status: 200, json: async () => braveJson };
   }, async () => {
     const res = fakeResponse();
-    await handleImageSearch(fakeRequest({ query: "Mara", apiKey: "test-key" }), res);
+    await handleImageSearch(fakeRequest({ query: "Mara Venn mystery", apiKey: "test-key" }), res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.payload.length, 1);
     assert.equal(res.payload[0].image, "https://img/a");

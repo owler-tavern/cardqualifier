@@ -209,7 +209,8 @@ export async function handleImageSearch(request, response) {
   const payload = JSON.parse(body || "{}");
   const config = normalizeSearchConfig({ apiKey: payload.apiKey });
   if (!isSearchConfigured(config)) return sendJson(response, 401, { error: "Brave Search API key required." });
-  const q = buildImageQuery(payload.card ?? {}) || payload.query || "character portrait";
+  const q = (typeof payload.query === "string" && payload.query.trim())
+    || buildImageQuery(payload.card ?? {}) || "character portrait";
   const braveUrl = `https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(q)}&count=20&safesearch=strict`;
   const upstream = await fetch(braveUrl, { headers: { "Accept": "application/json", "X-Subscription-Token": config.apiKey } });
   if (!upstream.ok) return sendJson(response, 502, { error: "Brave search request failed." });
