@@ -643,6 +643,10 @@ dialog input,dialog select {
 .tile:hover{border-color:#4a3f2e}
 .tile.unreadable{opacity:.5}
 .tile-top{display:flex;align-items:flex-start;justify-content:space-between}
+.tile-top.has-art{position:relative;display:block}
+.tile-art{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--inset);display:block}
+.tile-top.has-art .stamp{position:absolute;left:8px;bottom:8px;width:52px;height:52px;background:#1a1511e6}
+.tile-top.has-art input[type=checkbox]{position:absolute;top:8px;right:8px}
 .tile .stamp{width:60px;height:60px;border-radius:11px;background:var(--inset);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center}
 .tile .stamp b{font-family:'IBM Plex Mono',monospace;font-size:23px;font-weight:600;line-height:1}
 .tile .stamp span{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}

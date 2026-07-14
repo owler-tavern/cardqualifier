@@ -4,6 +4,18 @@ import { weakestAreas } from "./weakest-areas.mjs";
 const BUCKET = { Excellent: "ship", Good: "ship", Mixed: "fixable", Weak: "weak" };
 function bucketClass(band) { return BUCKET[band] || "weak"; }
 
+// Gallery tiles render the card portrait from the embedded PNG bytes. Each thumbnail
+// holds an object URL; revoke the previous batch on every render so repeated
+// filter/sort/view switches don't leak URLs.
+let tileUrls = [];
+function resetTileUrls() { for (const u of tileUrls) URL.revokeObjectURL(u); tileUrls = []; }
+function tileImgHtml(r) {
+  if (!r.sourcePng || !r.sourcePng.bytes) return "";
+  const url = URL.createObjectURL(new Blob([r.sourcePng.bytes], { type: "image/png" }));
+  tileUrls.push(url);
+  return `<img class="tile-art" src="${url}" alt="${escapeHtml(r.name || r.fileName)} portrait" loading="lazy">`;
+}
+
 function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
@@ -75,7 +87,8 @@ function renderGallery(rows, els, selected, handlers) {
     const bandLabel = r.error ? "Unreadable" : band;
     const weak = r.error ? "" : weakChipsHtml(r.result);
     tile.innerHTML =
-      `<div class="tile-top">` +
+      `<div class="tile-top${r.sourcePng && r.sourcePng.bytes ? " has-art" : ""}">` +
+        `${tileImgHtml(r)}` +
         `<div class="stamp ${bucketClass(band)}"><b>${stampScore}</b><span>${escapeHtml(bandLabel)}</span></div>` +
         `${check}` +
       `</div>` +
@@ -90,6 +103,7 @@ function renderGallery(rows, els, selected, handlers) {
 }
 
 export function renderOverview(store, els, state, handlers) {
+  resetTileUrls();
   renderSummary(store, els.summary);
   const rows = store.view({ sort: state.sort, dir: state.dir, bands: state.bands, query: state.query });
   const selected = store.selectedIds();
