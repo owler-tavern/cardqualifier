@@ -2,8 +2,13 @@ export function isBlockedHost(hostname) {
   const h = String(hostname).toLowerCase().replace(/^\[|\]$/g, "");
   if (!h) return true;
   if (h === "localhost" || h.endsWith(".localhost")) return true;
-  if (h === "::1") return true;
-  if (h.startsWith("fc") || h.startsWith("fd") || h.startsWith("fe80")) return true; // IPv6 ULA / link-local
+  // IPv6 literals contain a colon; only then apply IPv6 rules, so ordinary
+  // domains that merely start with "fc"/"fd"/"fe80" (e.g. fc2.com) aren't blocked.
+  if (h.includes(":")) {
+    if (h === "::1") return true;                                                     // loopback
+    if (h.startsWith("fc") || h.startsWith("fd") || h.startsWith("fe80")) return true; // ULA / link-local
+    return false;
+  }
   const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (m) {
     const a = Number(m[1]); const b = Number(m[2]);

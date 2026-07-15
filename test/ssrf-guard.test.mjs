@@ -24,3 +24,15 @@ test("allows public hosts and IPs", () => {
     assert.equal(isBlockedHost(h), false, h);
   }
 });
+
+test("does not over-block domains that merely start with fc/fd/fe80", () => {
+  // IPv6 ULA/link-local rules must only apply to actual IPv6 literals (which
+  // contain a colon), not to real domains like fc2.com.
+  for (const h of ["fc2.com", "fd-media.example", "fe80host.example.com"]) {
+    assert.equal(isBlockedHost(h), false, h);
+  }
+  // but genuine IPv6 ULA / link-local literals stay blocked.
+  for (const h of ["fd00::1", "fe80::1", "::1"]) {
+    assert.equal(isBlockedHost(h), true, h);
+  }
+});
